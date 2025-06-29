@@ -27,7 +27,7 @@ export const categories: {
     label: "Shopping",
     icon: ShoppingCart,
     color:
-      "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
+      "border-transparent bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
   },
   {
     value: "Transport",
@@ -47,7 +47,7 @@ export const categories: {
     value: "Entertainment",
     label: "Entertainment",
     icon: Film,
-    color: "border-transparent bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300",
+    color: "border-transparent bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
   },
   {
     value: "Health",
@@ -116,6 +116,46 @@ export const expenseData = [
     date: "2024-07-15",
     amount: 1800.0,
     group: "Flatmates",
+  },
+  {
+    id: "7",
+    description: "June Groceries",
+    category: "Shopping",
+    date: "2024-06-15",
+    amount: 4200.0,
+    group: "Flatmates",
+  },
+  {
+    id: "8",
+    description: "Concert Tickets",
+    category: "Entertainment",
+    date: "2024-06-10",
+    amount: 3000.0,
+    group: "Friends Hangout",
+  },
+  {
+    id: "9",
+    description: "Train to Mumbai",
+    category: "Travel",
+    date: "2024-06-05",
+    amount: 1500.0,
+    group: "",
+  },
+  {
+    id: "10",
+    description: "Doctor's visit",
+    category: "Health",
+    date: "2024-05-25",
+    amount: 800.0,
+    group: "",
+  },
+  {
+    id: "11",
+    description: "New headphones",
+    category: "Shopping",
+    date: "2024-05-12",
+    amount: 5500.0,
+    group: "",
   },
 ];
 
