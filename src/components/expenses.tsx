@@ -57,6 +57,8 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [time, setTime] = useState(() => format(new Date(), "HH:mm"));
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [category, setCategory] = useState("");
   const [group, setGroup] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -161,6 +163,11 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
       return;
     }
 
+    const [hours, minutes] = time.split(':').map(Number);
+    const combinedDate = new Date(date || new Date());
+    combinedDate.setHours(hours);
+    combinedDate.setMinutes(minutes);
+
     const selectedGroup = groups.find(g => g.id === group);
 
     addExpense({
@@ -168,7 +175,7 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
       amount: parseFloat(amount),
       category,
       group: selectedGroup ? selectedGroup.name : "",
-      date: date ? format(date, 'yyyy-MM-dd') : new Date().toISOString().split('T')[0],
+      date: combinedDate.toISOString(),
       notes,
       paymentMethod,
     });
@@ -226,30 +233,40 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
         </div>
         <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
           <Label htmlFor="date" className="sm:text-right">
-            Date
+            Date & Time
           </Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "sm:col-span-3 justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="sm:col-span-3 grid grid-cols-2 gap-2">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(d) => {
+                    setDate(d)
+                    setIsCalendarOpen(false)
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Input 
+              type="time" 
+              value={time} 
+              onChange={(e) => setTime(e.target.value)} 
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
           <Label htmlFor="category" className="sm:text-right">
@@ -480,5 +497,7 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
     </div>
   );
 }
+
+    
 
     
