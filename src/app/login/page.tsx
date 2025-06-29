@@ -60,10 +60,28 @@ export default function LoginPage() {
       }
       router.push('/');
     } catch (error: any) {
+      let description = "An unexpected error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/invalid-credential':
+          description = 'Invalid email or password. Please check your credentials and try again.';
+          break;
+        case 'auth/email-already-in-use':
+          description = 'This email address is already registered. Please sign in or use a different email.';
+          break;
+        case 'auth/weak-password':
+          description = 'The password is too weak. It must be at least 6 characters long.';
+          break;
+        case 'auth/invalid-email':
+            description = 'The email address is not valid. Please enter a valid email.';
+            break;
+        default:
+            description = error.message; // Fallback to the original error message
+      }
+
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
-        description: error.code === 'auth/invalid-credential' ? 'Invalid email or password.' : error.message,
+        description: description,
       });
     } finally {
       setIsLoading(false);
