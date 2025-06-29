@@ -261,37 +261,39 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
           <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="sm:col-span-3" placeholder="Add any extra details..." />
         </div>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Split Details</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
-                <Label htmlFor="people" className="sm:text-right">
-                People
-                </Label>
-                <Input id="people" type="number" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="sm:col-span-3" />
-            </div>
-            
-            <Button onClick={handleSuggestion} disabled={isSuggesting} className="w-full" type="button">
-              {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Suggest Split Method
-            </Button>
-            
-            {suggestion && (
-              <div className="mt-4 rounded-lg border bg-secondary/50 p-4">
-                <h4 className="font-semibold text-sm">AI Suggestion: <span className="text-primary">{suggestion.method}</span></h4>
-                <p className="text-sm text-muted-foreground mt-1">{suggestion.reasoning}</p>
+        {group && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Split Details</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+                  <Label htmlFor="people" className="sm:text-right">
+                  People
+                  </Label>
+                  <Input id="people" type="number" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="sm:col-span-3" />
               </div>
-            )}
-            
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <Button variant="outline" type="button"><IndianRupee className="mr-2 h-4 w-4"/>Equal</Button>
-                <Button variant="outline" type="button"><Users className="mr-2 h-4 w-4"/>Amounts</Button>
-                <Button variant="outline" type="button"><Percent className="mr-2 h-4 w-4"/>Percentage</Button>
-            </div>
-          </CardContent>
-        </Card>
+              
+              <Button onClick={handleSuggestion} disabled={isSuggesting} className="w-full" type="button">
+                {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Suggest Split Method
+              </Button>
+              
+              {suggestion && (
+                <div className="mt-4 rounded-lg border bg-secondary/50 p-4">
+                  <h4 className="font-semibold text-sm">AI Suggestion: <span className="text-primary">{suggestion.method}</span></h4>
+                  <p className="text-sm text-muted-foreground mt-1">{suggestion.reasoning}</p>
+                </div>
+              )}
+              
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <Button variant="outline" type="button"><IndianRupee className="mr-2 h-4 w-4"/>Equal</Button>
+                  <Button variant="outline" type="button"><Users className="mr-2 h-4 w-4"/>Amounts</Button>
+                  <Button variant="outline" type="button"><Percent className="mr-2 h-4 w-4"/>Percentage</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       </div>
       <DialogFooter>
