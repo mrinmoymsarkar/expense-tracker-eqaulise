@@ -2,6 +2,9 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/providers/auth-provider';
+import { auth } from '@/lib/firebase';
 import {
   Avatar,
   AvatarFallback,
@@ -80,39 +83,11 @@ const AppLayout = () => {
   const [groups, setGroups] = React.useState<Group[]>(initialGroupData);
   const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = React.useState(false);
-  const [isInitialized, setIsInitialized] = React.useState(false);
+  const { user } = useAuth();
 
-  // Load data from localStorage on initial client-side render
-  React.useEffect(() => {
-    try {
-      const savedExpenses = window.localStorage.getItem("equalize-expenses");
-      if (savedExpenses) {
-        setExpenses(JSON.parse(savedExpenses));
-      }
-
-      const savedGroups = window.localStorage.getItem("equalize-groups");
-      if (savedGroups) {
-        setGroups(JSON.parse(savedGroups));
-      }
-    } catch (error) {
-      console.error("Error reading from localStorage, using initial data.", error);
-    } finally {
-        setIsInitialized(true);
-    }
-  }, []);
-
-  // Save data to localStorage whenever it changes, but only after initialization
-  React.useEffect(() => {
-    if (isInitialized) {
-      try {
-        window.localStorage.setItem("equalize-expenses", JSON.stringify(expenses));
-        window.localStorage.setItem("equalize-groups", JSON.stringify(groups));
-      } catch (error) {
-        console.error("Error writing to localStorage", error);
-      }
-    }
-  }, [expenses, groups, isInitialized]);
-
+  const handleLogout = async () => {
+    await auth.signOut();
+  };
 
   const { isMobile, setOpenMobile } = useSidebar();
   const ActiveComponent = viewConfig[activeView].component;
@@ -199,7 +174,7 @@ const AppLayout = () => {
         <SidebarFooter>
           <SidebarMenu>
              <SidebarMenuItem>
-              <SidebarMenuButton size={isMobile ? "lg" : "default"} tooltip={{children: 'Logout'}}>
+              <SidebarMenuButton onClick={handleLogout} size={isMobile ? "lg" : "default"} tooltip={{children: 'Logout'}}>
                 <LogOut />
                 <span>Logout</span>
               </SidebarMenuButton>
@@ -212,16 +187,16 @@ const AppLayout = () => {
                   : "flex items-center gap-2 p-2"
                 )}>
                   <Avatar className={cn("transition-all", isMobile ? "h-16 w-16" : "h-8 w-8")}>
-                    <AvatarImage src="https://placehold.co/40x40.png" alt="@shadcn" data-ai-hint="profile picture" />
-                    <AvatarFallback>SN</AvatarFallback>
+                    <AvatarImage src={user?.photoURL || "https://placehold.co/40x40.png"} alt={user?.displayName || "User"} data-ai-hint="profile picture" />
+                    <AvatarFallback>{user?.displayName ? user.displayName.slice(0, 2).toUpperCase() : user?.email?.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className={cn(
                     "flex flex-col",
                     isMobile ? "items-center" : ""
                   )}>
-                    <span className={cn("font-medium", isMobile ? "text-base" : "text-sm")}>Shishir Nikam</span>
+                    <span className={cn("font-medium", isMobile ? "text-base" : "text-sm")}>{user?.displayName || user?.email}</span>
                     <span className={cn("text-muted-foreground", isMobile ? "text-sm" : "text-xs")}>
-                      shishir.nikam@email.com
+                      {user?.email}
                     </span>
                   </div>
               </div>
@@ -273,6 +248,21 @@ const AppLayout = () => {
 }
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    // AuthProvider shows a loading spinner, so we can return null here
+    // to prevent flashing the login page while the user is being authenticated.
+    return null;
+  }
+
   return (
     <SidebarProvider>
       <AppLayout />
