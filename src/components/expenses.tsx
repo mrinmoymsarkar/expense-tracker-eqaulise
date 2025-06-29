@@ -388,20 +388,6 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
 
   return (
     <div className="grid gap-6">
-      <div className="flex items-center justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Expense
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
-            <ExpenseForm setOpen={setOpen} addExpense={addExpense} groups={groups} />
-          </DialogContent>
-        </Dialog>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Recent Transactions</CardTitle>
@@ -494,10 +480,17 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
           </div>
         </CardContent>
       </Card>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button className="fixed bottom-6 right-6 z-10 h-14 w-14 rounded-full shadow-lg md:h-auto md:w-auto md:rounded-md md:px-4 md:py-2">
+            <Plus className="h-6 w-6 md:mr-2 md:h-4 md:w-4" />
+            <span className="hidden md:inline">Add Expense</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
+          <ExpenseForm setOpen={setOpen} addExpense={addExpense} groups={groups} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-    
-
-    
