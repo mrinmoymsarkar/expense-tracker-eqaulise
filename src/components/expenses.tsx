@@ -11,13 +11,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +29,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Plus,
   Sparkles,
   Upload,
   Loader2,
@@ -53,7 +49,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
 
-const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean) => void, addExpense: (expense: any) => void, groups: any[] }) => {
+export const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean) => void, addExpense: (expense: any) => void, groups: any[] }) => {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -384,7 +380,6 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
 };
 
 export default function Expenses({ expenses, groups, addExpense }: { expenses: any[], groups: any[], addExpense: (expense: any) => void }) {
-  const [open, setOpen] = useState(false);
 
   return (
     <div className="grid gap-6">
@@ -480,17 +475,6 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
           </div>
         </CardContent>
       </Card>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="fixed bottom-6 right-6 z-10 h-14 w-14 rounded-full shadow-lg md:h-auto md:w-auto md:rounded-md md:px-4 md:py-2">
-            <Plus className="h-6 w-6 md:mr-2 md:h-4 md:w-4" />
-            <span className="hidden md:inline">Add Expense</span>
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
-          <ExpenseForm setOpen={setOpen} addExpense={addExpense} groups={groups} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -30,11 +30,16 @@ import {
   Bell,
   LogOut,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import { EqualizeLogo } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Dashboard from "@/components/dashboard";
-import Expenses from "@/components/expenses";
+import Expenses, { ExpenseForm } from "@/components/expenses";
 import Groups from "@/components/groups";
 import Settings from "@/components/settings";
 import GroupDetail from "@/components/group-detail";
@@ -73,6 +78,7 @@ const AppLayout = () => {
   const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenseData);
   const [groups, setGroups] = React.useState<Group[]>(initialGroupData);
   const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = React.useState(false);
 
   const { isMobile } = useSidebar();
   const ActiveComponent = viewConfig[activeView].component;
@@ -96,6 +102,7 @@ const AppLayout = () => {
         );
       }
     }
+    setIsAddExpenseOpen(false);
   };
 
   const addGroup = (newGroupData: Pick<Group, "name" | "imageUrl" | "imageHint">) => {
@@ -201,6 +208,20 @@ const AppLayout = () => {
           )}
         </main>
       </SidebarInset>
+      
+      {['dashboard', 'expenses', 'groups'].includes(activeView) && !selectedGroup && (
+        <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
+          <DialogTrigger asChild>
+            <Button className="fixed bottom-6 right-6 z-10 h-14 w-14 rounded-full shadow-lg md:h-auto md:w-auto md:rounded-md md:px-4 md:py-2">
+              <Plus className="h-6 w-6 md:mr-2 md:h-4 md:w-4" />
+              <span className="hidden md:inline">Add Expense</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
+            <ExpenseForm setOpen={setIsAddExpenseOpen} addExpense={addExpense} groups={groups} />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
