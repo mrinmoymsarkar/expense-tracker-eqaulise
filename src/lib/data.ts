@@ -108,6 +108,7 @@ export const expenseData = [
     amount: 3250.0,
     group: "Office Buddies",
     paymentMethod: "Card",
+    notes: "Celebrating project launch"
   },
   {
     id: "2",
@@ -117,6 +118,7 @@ export const expenseData = [
     amount: 1200.0,
     group: "Friends Hangout",
     paymentMethod: "UPI",
+    notes: ""
   },
   {
     id: "3",
@@ -126,6 +128,7 @@ export const expenseData = [
     amount: 2500.5,
     group: "Flatmates",
     paymentMethod: "Card",
+    notes: "Monthly supplies"
   },
   {
     id: "4",
@@ -135,6 +138,7 @@ export const expenseData = [
     amount: 18500.0,
     group: "Goa Trip '24",
     paymentMethod: "Card",
+    notes: "Indigo flight 6E-2045"
   },
   {
     id: "5",
@@ -144,6 +148,7 @@ export const expenseData = [
     amount: 450.0,
     group: "Office Buddies",
     paymentMethod: "UPI",
+    notes: ""
   },
   {
     id: "6",
@@ -153,6 +158,7 @@ export const expenseData = [
     amount: 1800.0,
     group: "Flatmates",
     paymentMethod: "UPI",
+    notes: "Bill for June"
   },
   {
     id: "7",
@@ -162,6 +168,7 @@ export const expenseData = [
     amount: 4200.0,
     group: "Flatmates",
     paymentMethod: "Cash",
+    notes: ""
   },
   {
     id: "8",
@@ -171,6 +178,7 @@ export const expenseData = [
     amount: 3000.0,
     group: "Friends Hangout",
     paymentMethod: "UPI",
+    notes: "Coldplay concert"
   },
   {
     id: "9",
@@ -180,6 +188,7 @@ export const expenseData = [
     amount: 1500.0,
     group: "",
     paymentMethod: "Card",
+    notes: ""
   },
   {
     id: "10",
@@ -189,6 +198,7 @@ export const expenseData = [
     amount: 800.0,
     group: "",
     paymentMethod: "Cash",
+    notes: "Follow-up checkup"
   },
   {
     id: "11",
@@ -198,6 +208,7 @@ export const expenseData = [
     amount: 5500.0,
     group: "",
     paymentMethod: "Card",
+    notes: "Sony WH-1000XM5"
   },
 ];
 

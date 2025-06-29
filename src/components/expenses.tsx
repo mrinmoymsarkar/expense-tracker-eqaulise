@@ -39,12 +39,13 @@ import {
   Smartphone,
   Wallet,
   CalendarIcon,
+  Download,
 } from "lucide-react";
 import { categories, getCategory, paymentMethods, getPaymentMethod } from "@/lib/data";
 import { getSplitSuggestion, processReceipt } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { cn } from "@/lib/utils";
+import { cn, exportToCsv } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { format } from "date-fns";
@@ -380,12 +381,30 @@ export const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: b
 };
 
 export default function Expenses({ expenses, groups, addExpense }: { expenses: any[], groups: any[], addExpense: (expense: any) => void }) {
+  const handleExport = () => {
+    const dataToExport = expenses.map((expense) => ({
+      ID: expense.id,
+      Description: expense.description,
+      Amount: expense.amount.toFixed(2),
+      Category: expense.category,
+      Date: format(new Date(expense.date), "yyyy-MM-dd HH:mm"),
+      Group: expense.group || "N/A",
+      "Payment Method": expense.paymentMethod,
+      Notes: expense.notes || "",
+    }));
+    exportToCsv("expenses.csv", dataToExport);
+  };
+
 
   return (
     <div className="grid gap-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Transactions</CardTitle>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
         </CardHeader>
         <CardContent>
           {/* Desktop Table */}
