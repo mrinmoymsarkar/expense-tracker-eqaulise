@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -40,18 +39,23 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const handleAuthAction = async (action: 'signIn' | 'signUp') => {
+    // Set loading state immediately to give feedback
+    setAuthAction(action);
+    setIsLoading(true);
+
+    // Validate fields
     if (!email || !password) {
       toast({
           variant: 'destructive',
           title: 'Missing Fields',
           description: 'Please enter both email and password.',
       });
+      // Reset loading state and return
+      setIsLoading(false);
+      setAuthAction(null);
       return;
     }
     
-    setAuthAction(action);
-    setIsLoading(true);
-
     try {
       if (action === 'signUp') {
         await createUserWithEmailAndPassword(auth, email, password);
@@ -84,6 +88,7 @@ export default function LoginPage() {
         description: description,
       });
     } finally {
+      // This will run regardless of success or error in the try/catch block
       setIsLoading(false);
       setAuthAction(null);
     }
