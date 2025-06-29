@@ -20,46 +20,46 @@ export const categories: {
     value: "Food",
     label: "Food & Dining",
     icon: Utensils,
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+    color: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
   },
   {
     value: "Shopping",
     label: "Shopping",
     icon: ShoppingCart,
     color:
-      "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+      "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/50 dark:text-fuchsia-300",
   },
   {
     value: "Transport",
     label: "Transportation",
     icon: Car,
     color:
-      "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+      "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300",
   },
   {
     value: "Housing",
     label: "Housing & Utilities",
     icon: Home,
     color:
-      "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
+      "bg-lime-100 text-lime-800 dark:bg-lime-900/50 dark:text-lime-300",
   },
   {
     value: "Entertainment",
     label: "Entertainment",
     icon: Film,
-    color: "bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300",
+    color: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300",
   },
   {
     value: "Health",
     label: "Health & Wellness",
     icon: HeartPulse,
-    color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+    color: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300",
   },
   {
     value: "Travel",
     label: "Travel",
     icon: Plane,
-    color: "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300",
+    color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300",
   },
 ];
 
