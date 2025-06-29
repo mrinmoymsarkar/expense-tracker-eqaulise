@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -38,37 +39,34 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleAuthAction = async (action: 'signIn' | 'signUp') => {
-    // Set loading state immediately to give feedback
-    setAuthAction(action);
-    setIsLoading(true);
-
-    // Validate fields
+  const handleValidation = () => {
     if (!email || !password) {
       toast({
           variant: 'destructive',
           title: 'Missing Fields',
           description: 'Please enter both email and password.',
       });
-      // Reset loading state and return
+      return false;
+    }
+    return true;
+  };
+
+  const handleSignUp = async () => {
+    setAuthAction('signUp');
+    setIsLoading(true);
+
+    if (!handleValidation()) {
       setIsLoading(false);
       setAuthAction(null);
       return;
     }
-    
+
     try {
-      if (action === 'signUp') {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
+      await createUserWithEmailAndPassword(auth, email, password);
       router.push('/');
     } catch (error: any) {
       let description = "An unexpected error occurred. Please try again.";
       switch (error.code) {
-        case 'auth/invalid-credential':
-          description = 'Invalid email or password. Please check your credentials and try again.';
-          break;
         case 'auth/email-already-in-use':
           description = 'This email address is already registered. Please sign in or use a different email.';
           break;
@@ -79,16 +77,42 @@ export default function LoginPage() {
             description = 'The email address is not valid. Please enter a valid email.';
             break;
         default:
-            description = error.message; // Fallback to the original error message
+            description = error.message;
       }
-
-      toast({
-        variant: 'destructive',
-        title: 'Authentication Failed',
-        description: description,
-      });
+      toast({ variant: 'destructive', title: 'Sign Up Failed', description });
     } finally {
-      // This will run regardless of success or error in the try/catch block
+      setIsLoading(false);
+      setAuthAction(null);
+    }
+  };
+
+  const handleSignIn = async () => {
+    setAuthAction('signIn');
+    setIsLoading(true);
+
+    if (!handleValidation()) {
+      setIsLoading(false);
+      setAuthAction(null);
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push('/');
+    } catch (error: any) {
+      let description = "An unexpected error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/invalid-credential':
+          description = 'Invalid email or password. Please check your credentials and try again.';
+          break;
+        case 'auth/invalid-email':
+            description = 'The email address is not valid. Please enter a valid email.';
+            break;
+        default:
+            description = error.message;
+      }
+      toast({ variant: 'destructive', title: 'Sign In Failed', description });
+    } finally {
       setIsLoading(false);
       setAuthAction(null);
     }
@@ -153,10 +177,10 @@ export default function LoginPage() {
               />
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
-                <Button onClick={() => handleAuthAction('signIn')} disabled={isLoading} className="w-full">
+                <Button onClick={handleSignIn} disabled={isLoading} className="w-full">
                 {isLoading && authAction === 'signIn' ? 'Signing In...' : 'Sign In'}
                 </Button>
-                <Button onClick={() => handleAuthAction('signUp')} disabled={isLoading} className="w-full" variant="secondary">
+                <Button onClick={handleSignUp} disabled={isLoading} className="w-full" variant="secondary">
                 {isLoading && authAction === 'signUp' ? 'Signing Up...' : 'Sign Up'}
                 </Button>
             </div>
