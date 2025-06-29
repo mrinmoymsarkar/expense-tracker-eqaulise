@@ -44,6 +44,7 @@ import Groups from "@/components/groups";
 import Settings from "@/components/settings";
 import GroupDetail from "@/components/group-detail";
 import { expenseData as initialExpenseData, groupData as initialGroupData } from "@/lib/data";
+import { cn } from "@/lib/utils";
 
 type View = "dashboard" | "expenses" | "groups" | "settings";
 
@@ -80,7 +81,7 @@ const AppLayout = () => {
   const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = React.useState(false);
 
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const ActiveComponent = viewConfig[activeView].component;
 
   const addExpense = (newExpenseData: Omit<Expense, "id">) => {
@@ -143,9 +144,13 @@ const AppLayout = () => {
               return (
                 <SidebarMenuItem key={view}>
                   <SidebarMenuButton
+                    size={isMobile ? "lg" : "default"}
                     onClick={() => {
                       setActiveView(view);
                       setSelectedGroup(null);
+                      if (isMobile) {
+                        setOpenMobile(false);
+                      }
                     }}
                     isActive={activeView === view && !selectedGroup}
                     tooltip={{ children: viewConfig[view].title }}
@@ -161,20 +166,28 @@ const AppLayout = () => {
         <SidebarFooter>
           <SidebarMenu>
              <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{children: 'Logout'}}>
+              <SidebarMenuButton size={isMobile ? "lg" : "default"} tooltip={{children: 'Logout'}}>
                 <LogOut />
                 <span>Logout</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-               <div className="flex items-center gap-2 rounded-md p-2 transition-colors">
-                  <Avatar className="h-8 w-8">
+               <div className={cn(
+                  "transition-colors rounded-md",
+                  isMobile
+                  ? "flex-col items-center gap-2 p-4 text-center"
+                  : "flex items-center gap-2 p-2"
+                )}>
+                  <Avatar className={cn("transition-all", isMobile ? "h-16 w-16" : "h-8 w-8")}>
                     <AvatarImage src="https://placehold.co/40x40.png" alt="@shadcn" data-ai-hint="profile picture" />
                     <AvatarFallback>SN</AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">Shishir Nikam</span>
-                    <span className="text-xs text-muted-foreground">
+                  <div className={cn(
+                    "flex flex-col",
+                    isMobile ? "items-center" : ""
+                  )}>
+                    <span className={cn("font-medium", isMobile ? "text-base" : "text-sm")}>Shishir Nikam</span>
+                    <span className={cn("text-muted-foreground", isMobile ? "text-sm" : "text-xs")}>
                       shishir.nikam@email.com
                     </span>
                   </div>
