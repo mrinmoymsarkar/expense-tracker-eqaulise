@@ -204,7 +204,7 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-full bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="bg-sidebar p-0 text-sidebar-foreground"
             side={side}
           >
             <SheetHeader className="sr-only">
