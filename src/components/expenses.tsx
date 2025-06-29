@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -41,7 +41,7 @@ import {
   IndianRupee,
 } from "lucide-react";
 import { categories, getCategory } from "@/lib/data";
-import { getSplitSuggestion } from "@/app/actions";
+import { getSplitSuggestion, processReceipt } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { cn } from "@/lib/utils";
@@ -54,8 +54,10 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
   const [notes, setNotes] = useState("");
   const [numPeople, setNumPeople] = useState(2);
   const [suggestion, setSuggestion] = useState<{ method?: string; reasoning?: string } | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isSuggesting, startSuggestionTransition] = useTransition();
+  const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSuggestion = () => {
     if (!description || numPeople < 2) {
@@ -67,7 +69,7 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
       return;
     }
 
-    startTransition(async () => {
+    startSuggestionTransition(async () => {
       const result = await getSplitSuggestion({ description, numPeople });
       if (result.error) {
         toast({
@@ -80,6 +82,64 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
       }
     });
   };
+
+  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        toast({
+            variant: "destructive",
+            title: "Invalid File Type",
+            description: "Please upload an image file.",
+        });
+        return;
+    }
+
+    setIsScanning(true);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+        const receiptDataUri = reader.result as string;
+        const result = await processReceipt({ receiptDataUri });
+
+        if (result.error || !result.data) {
+            toast({
+                variant: "destructive",
+                title: "Receipt Scan Failed",
+                description: result.error || "Could not extract details from the receipt.",
+            });
+        } else {
+            const { description, amount, category } = result.data;
+            setDescription(description);
+            setAmount(amount.toString());
+            
+            const isValidCategory = categories.some(c => c.value === category);
+            if (isValidCategory) {
+              setCategory(category);
+            }
+
+            toast({
+                title: "Receipt Scanned!",
+                description: "Expense details have been filled in.",
+            });
+        }
+        setIsScanning(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+    reader.onerror = (error) => {
+        console.error("Error reading file:", error);
+        toast({
+            variant: "destructive",
+            title: "File Read Error",
+            description: "Could not read the selected file.",
+        });
+        setIsScanning(false);
+    };
+};
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,10 +170,38 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
       <DialogHeader>
         <DialogTitle>Add New Expense</DialogTitle>
         <DialogDescription>
-          Enter the details of your expense below.
+          Enter the details of your expense below. You can also scan a receipt to autofill.
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="receipt" className="sm:text-right">
+            Receipt
+          </Label>
+          <Input
+            id="receipt"
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleReceiptUpload}
+            className="hidden"
+          />
+          <Button
+            variant="outline"
+            className="sm:col-span-3 justify-start font-normal text-muted-foreground"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isScanning}
+            type="button"
+          >
+            {isScanning ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            {isScanning ? 'Scanning...' : 'Upload & Scan Receipt'}
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
           <Label htmlFor="description" className="sm:text-right">
             Description
@@ -166,15 +254,6 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
-          <Label htmlFor="receipt" className="sm:text-right">
-            Receipt
-          </Label>
-          <Button variant="outline" className="sm:col-span-3 justify-start font-normal text-muted-foreground">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload an image
-          </Button>
-        </div>
         <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-start sm:gap-x-4">
           <Label htmlFor="notes" className="pt-2 sm:text-right">
             Notes
@@ -194,8 +273,8 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
                 <Input id="people" type="number" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="sm:col-span-3" />
             </div>
             
-            <Button onClick={handleSuggestion} disabled={isPending} className="w-full" type="button">
-              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            <Button onClick={handleSuggestion} disabled={isSuggesting} className="w-full" type="button">
+              {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Suggest Split Method
             </Button>
             
