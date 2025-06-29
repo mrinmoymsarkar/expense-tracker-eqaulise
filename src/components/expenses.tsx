@@ -350,7 +350,7 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                         {expense.description}
                       </TableCell>
                       <TableCell>
-                        <Badge className={cn("w-fit items-center gap-2 border-transparent", category.color)}>
+                        <Badge variant="outline" className={cn("w-fit items-center gap-2", category.color)}>
                           <CategoryIcon className="h-4 w-4" />
                           <span>{expense.category}</span>
                         </Badge>
@@ -381,7 +381,7 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <Badge className={cn("w-fit items-center gap-1.5 py-1 px-2 border-transparent", category.color)}>
+                    <Badge variant="outline" className={cn("w-fit items-center gap-1.5 py-1 px-2", category.color)}>
                       <CategoryIcon className="h-3.5 w-3.5" />
                       <span className="text-xs">{expense.category}</span>
                     </Badge>
