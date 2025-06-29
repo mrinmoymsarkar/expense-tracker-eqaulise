@@ -17,7 +17,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,10 +39,11 @@ import {
   Percent,
   IndianRupee,
 } from "lucide-react";
-import { categories, expenseData, getCategoryIcon } from "@/lib/data";
+import { categories, expenseData, getCategory } from "@/lib/data";
 import { getSplitSuggestion } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { cn } from "@/lib/utils";
 
 const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
   const [description, setDescription] = useState("");
@@ -107,7 +107,7 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => {
-                const CategoryIcon = getCategoryIcon(category.value);
+                const CategoryIcon = category.icon;
                 return (
                   <SelectItem key={category.value} value={category.value}>
                     <div className="flex items-center gap-2">
@@ -215,14 +215,15 @@ export default function Expenses() {
               </TableHeader>
               <TableBody>
                 {expenseData.map((expense) => {
-                  const CategoryIcon = getCategoryIcon(expense.category);
+                  const category = getCategory(expense.category);
+                  const CategoryIcon = category.icon;
                   return (
                     <TableRow key={expense.id}>
                       <TableCell className="font-medium">
                         {expense.description}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="flex w-fit items-center gap-2">
+                        <Badge className={cn("w-fit items-center gap-2 border-transparent", category.color)}>
                           <CategoryIcon className="h-4 w-4" />
                           <span>{expense.category}</span>
                         </Badge>
@@ -242,7 +243,8 @@ export default function Expenses() {
           {/* Mobile Card List */}
           <div className="grid gap-4 md:hidden">
             {expenseData.map((expense) => {
-              const CategoryIcon = getCategoryIcon(expense.category);
+              const category = getCategory(expense.category);
+              const CategoryIcon = category.icon;
               return (
                 <div key={expense.id} className="rounded-lg border p-4 flex flex-col gap-2">
                   <div className="flex justify-between items-start">
@@ -252,7 +254,7 @@ export default function Expenses() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <Badge variant="outline" className="flex w-fit items-center gap-1.5 py-1 px-2">
+                    <Badge className={cn("w-fit items-center gap-1.5 py-1 px-2 border-transparent", category.color)}>
                       <CategoryIcon className="h-3.5 w-3.5" />
                       <span className="text-xs">{expense.category}</span>
                     </Badge>

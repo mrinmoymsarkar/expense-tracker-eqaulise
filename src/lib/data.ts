@@ -9,22 +9,62 @@ import {
   Plane,
 } from "lucide-react";
 
-export const categories: { value: string; label: string; icon: LucideIcon }[] = [
-  { value: "Food", label: "Food & Dining", icon: Utensils },
-  { value: "Shopping", label: "Shopping", icon: ShoppingCart },
-  { value: "Transport", label: "Transportation", icon: Car },
-  { value: "Housing", label: "Housing & Utilities", icon: Home },
-  { value: "Entertainment", label: "Entertainment", icon: Film },
-  { value: "Health", label: "Health & Wellness", icon: HeartPulse },
-  { value: "Travel", label: "Travel", icon: Plane },
+export const categories: {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+  color: string;
+}[] = [
+  {
+    value: "Food",
+    label: "Food & Dining",
+    icon: Utensils,
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+  },
+  {
+    value: "Shopping",
+    label: "Shopping",
+    icon: ShoppingCart,
+    color:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+  },
+  {
+    value: "Transport",
+    label: "Transportation",
+    icon: Car,
+    color:
+      "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+  },
+  {
+    value: "Housing",
+    label: "Housing & Utilities",
+    icon: Home,
+    color:
+      "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
+  },
+  {
+    value: "Entertainment",
+    label: "Entertainment",
+    icon: Film,
+    color: "bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300",
+  },
+  {
+    value: "Health",
+    label: "Health & Wellness",
+    icon: HeartPulse,
+    color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+  },
+  {
+    value: "Travel",
+    label: "Travel",
+    icon: Plane,
+    color: "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300",
+  },
 ];
 
-export const getCategoryIcon = (
-  categoryValue: string
-) => {
+export const getCategory = (categoryValue: string) => {
   const category = categories.find((c) => c.value === categoryValue);
-  const Icon = category ? category.icon : Utensils;
-  return Icon;
+  return category || categories[0];
 };
 
 export const expenseData = [
