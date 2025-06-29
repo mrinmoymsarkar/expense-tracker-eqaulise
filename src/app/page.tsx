@@ -80,6 +80,39 @@ const AppLayout = () => {
   const [groups, setGroups] = React.useState<Group[]>(initialGroupData);
   const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = React.useState(false);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+
+  // Load data from localStorage on initial client-side render
+  React.useEffect(() => {
+    try {
+      const savedExpenses = window.localStorage.getItem("equalize-expenses");
+      if (savedExpenses) {
+        setExpenses(JSON.parse(savedExpenses));
+      }
+
+      const savedGroups = window.localStorage.getItem("equalize-groups");
+      if (savedGroups) {
+        setGroups(JSON.parse(savedGroups));
+      }
+    } catch (error) {
+      console.error("Error reading from localStorage, using initial data.", error);
+    } finally {
+        setIsInitialized(true);
+    }
+  }, []);
+
+  // Save data to localStorage whenever it changes, but only after initialization
+  React.useEffect(() => {
+    if (isInitialized) {
+      try {
+        window.localStorage.setItem("equalize-expenses", JSON.stringify(expenses));
+        window.localStorage.setItem("equalize-groups", JSON.stringify(groups));
+      } catch (error) {
+        console.error("Error writing to localStorage", error);
+      }
+    }
+  }, [expenses, groups, isInitialized]);
+
 
   const { isMobile, setOpenMobile } = useSidebar();
   const ActiveComponent = viewConfig[activeView].component;
