@@ -44,7 +44,6 @@ import { categories, expenseData, getCategoryIcon } from "@/lib/data";
 import { getSplitSuggestion } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
   const [description, setDescription] = useState("");
@@ -86,24 +85,24 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 py-4">
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="description" className="text-right">
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="description" className="sm:text-right">
             Description
           </Label>
-          <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" placeholder="e.g., Dinner at BBQ Nation" />
+          <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="sm:col-span-3" placeholder="e.g., Dinner at BBQ Nation" />
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="amount" className="text-right">
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="amount" className="sm:text-right">
             Amount
           </Label>
-          <Input id="amount" type="number" className="col-span-3" placeholder="e.g., 3000" />
+          <Input id="amount" type="number" className="sm:col-span-3" placeholder="e.g., 3000" />
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="category" className="text-right">
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="category" className="sm:text-right">
             Category
           </Label>
           <Select>
-            <SelectTrigger className="col-span-3">
+            <SelectTrigger className="sm:col-span-3">
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
@@ -121,32 +120,32 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="receipt" className="text-right">
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="receipt" className="sm:text-right">
             Receipt
           </Label>
-          <Button variant="outline" className="col-span-3 justify-start font-normal text-muted-foreground">
+          <Button variant="outline" className="sm:col-span-3 justify-start font-normal text-muted-foreground">
             <Upload className="mr-2 h-4 w-4" />
             Upload an image
           </Button>
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="notes" className="text-right">
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-start sm:gap-x-4">
+          <Label htmlFor="notes" className="pt-2 sm:text-right">
             Notes
           </Label>
-          <Textarea id="notes" className="col-span-3" placeholder="Add any extra details..." />
+          <Textarea id="notes" className="sm:col-span-3" placeholder="Add any extra details..." />
         </div>
         
-        <Card className="col-span-4">
+        <Card>
           <CardHeader>
             <CardTitle>Split Details</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="people" className="text-right">
+            <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+                <Label htmlFor="people" className="sm:text-right">
                 People
                 </Label>
-                <Input id="people" type="number" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="col-span-3" />
+                <Input id="people" type="number" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="sm:col-span-3" />
             </div>
             
             <Button onClick={handleSuggestion} disabled={isPending} className="w-full">
@@ -161,7 +160,7 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
               </div>
             )}
             
-            <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Button variant="outline"><IndianRupee className="mr-2 h-4 w-4"/>Equal</Button>
                 <Button variant="outline"><Users className="mr-2 h-4 w-4"/>Amounts</Button>
                 <Button variant="outline"><Percent className="mr-2 h-4 w-4"/>Percentage</Button>
@@ -191,7 +190,7 @@ export default function Expenses() {
               Add Expense
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
             <ExpenseForm setOpen={setOpen} />
           </DialogContent>
         </Dialog>
@@ -202,40 +201,72 @@ export default function Expenses() {
           <CardTitle>Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Group</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenseData.map((expense) => {
-                const CategoryIcon = getCategoryIcon(expense.category);
-                return (
-                  <TableRow key={expense.id}>
-                    <TableCell className="font-medium">
-                      {expense.description}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="flex w-fit items-center gap-2">
-                        <CategoryIcon className="h-4 w-4" />
-                        <span>{expense.category}</span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{expense.date}</TableCell>
-                    <TableCell>{expense.group}</TableCell>
-                    <TableCell className="text-right font-mono">
+          {/* Desktop Table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Group</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenseData.map((expense) => {
+                  const CategoryIcon = getCategoryIcon(expense.category);
+                  return (
+                    <TableRow key={expense.id}>
+                      <TableCell className="font-medium">
+                        {expense.description}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="flex w-fit items-center gap-2">
+                          <CategoryIcon className="h-4 w-4" />
+                          <span>{expense.category}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{expense.date}</TableCell>
+                      <TableCell>{expense.group}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        ₹{expense.amount.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className="grid gap-4 md:hidden">
+            {expenseData.map((expense) => {
+              const CategoryIcon = getCategoryIcon(expense.category);
+              return (
+                <div key={expense.id} className="rounded-lg border p-4 flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <span className="font-medium pr-2 break-words">{expense.description}</span>
+                    <span className="font-mono font-semibold text-lg whitespace-nowrap">
                       ₹{expense.amount.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <Badge variant="outline" className="flex w-fit items-center gap-1.5 py-1 px-2">
+                      <CategoryIcon className="h-3.5 w-3.5" />
+                      <span className="text-xs">{expense.category}</span>
+                    </Badge>
+                    <span>{expense.date}</span>
+                  </div>
+                  {expense.group && (
+                    <div className="text-xs text-muted-foreground">
+                      Group: <span className="font-medium">{expense.group}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
     </div>
