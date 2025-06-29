@@ -73,7 +73,7 @@ const CreateGroupForm = ({ setOpen, addGroup }: { setOpen: (open: boolean) => vo
   );
 };
 
-export default function Groups({ groups, addGroup }: { groups: any[], addGroup: (group: any) => void }) {
+export default function Groups({ groups, addGroup, onSelectGroup }: { groups: any[], addGroup: (group: any) => void, onSelectGroup: (group: any) => void }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -120,7 +120,7 @@ export default function Groups({ groups, addGroup }: { groups: any[], addGroup: 
                 <IndianRupee className="h-4 w-4 mr-1" />
                 <span>{group.totalExpenses.toLocaleString()} Total</span>
               </div>
-               <Button variant="secondary" size="sm">View</Button>
+               <Button variant="secondary" size="sm" onClick={() => onSelectGroup(group)}>View</Button>
             </CardFooter>
           </Card>
         ))}

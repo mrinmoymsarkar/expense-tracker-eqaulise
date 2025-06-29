@@ -37,6 +37,7 @@ import Dashboard from "@/components/dashboard";
 import Expenses from "@/components/expenses";
 import Groups from "@/components/groups";
 import Settings from "@/components/settings";
+import GroupDetail from "@/components/group-detail";
 import { expenseData as initialExpenseData, groupData as initialGroupData } from "@/lib/data";
 
 type View = "dashboard" | "expenses" | "groups" | "settings";
@@ -71,6 +72,7 @@ const AppLayout = () => {
   const [activeView, setActiveView] = React.useState<View>("dashboard");
   const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenseData);
   const [groups, setGroups] = React.useState<Group[]>(initialGroupData);
+  const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
 
   const { isMobile } = useSidebar();
   const ActiveComponent = viewConfig[activeView].component;
@@ -111,7 +113,7 @@ const AppLayout = () => {
   const componentProps: any = {
     dashboard: { expenses },
     expenses: { expenses, groups, addExpense },
-    groups: { groups, addGroup },
+    groups: { groups, addGroup, onSelectGroup: setSelectedGroup },
     settings: {},
   };
   const activeProps = componentProps[activeView];
@@ -134,8 +136,11 @@ const AppLayout = () => {
               return (
                 <SidebarMenuItem key={view}>
                   <SidebarMenuButton
-                    onClick={() => setActiveView(view)}
-                    isActive={activeView === view}
+                    onClick={() => {
+                      setActiveView(view);
+                      setSelectedGroup(null);
+                    }}
+                    isActive={activeView === view && !selectedGroup}
                     tooltip={{ children: viewConfig[view].title }}
                   >
                     <Icon />
@@ -177,7 +182,7 @@ const AppLayout = () => {
           <div className="flex items-center gap-2">
             {isMobile && <SidebarTrigger />}
             <h2 className="font-headline text-xl font-semibold">
-              {viewConfig[activeView].title}
+              {selectedGroup ? selectedGroup.name : viewConfig[activeView].title}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -189,7 +194,11 @@ const AppLayout = () => {
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <ActiveComponent {...activeProps} />
+           {selectedGroup ? (
+            <GroupDetail group={selectedGroup} onBack={() => setSelectedGroup(null)} />
+          ) : (
+            <ActiveComponent {...activeProps} />
+          )}
         </main>
       </SidebarInset>
     </div>
