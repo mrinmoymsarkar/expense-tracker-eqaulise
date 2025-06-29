@@ -40,17 +40,19 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const handleAuthAction = async (action: 'signIn' | 'signUp') => {
+    if (!email || !password) {
+      toast({
+          variant: 'destructive',
+          title: 'Missing Fields',
+          description: 'Please enter both email and password.',
+      });
+      return;
+    }
+    
     setAuthAction(action);
     setIsLoading(true);
+
     try {
-      if (!email || !password) {
-        toast({
-            variant: 'destructive',
-            title: 'Missing Fields',
-            description: 'Please enter both email and password.',
-        });
-        return;
-      }
       if (action === 'signUp') {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
