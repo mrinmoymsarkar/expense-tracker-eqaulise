@@ -14,19 +14,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { IndianRupee, Landmark, Users, ArrowUp, ArrowDown } from "lucide-react";
-import { expenseData } from "@/lib/data";
-
-const chartData = expenseData.reduce((acc, expense) => {
-  const existingCategory = acc.find((item) => item.category === expense.category);
-  if (existingCategory) {
-    existingCategory.amount += expense.amount;
-  } else {
-    acc.push({ category: expense.category, amount: expense.amount });
-  }
-  return acc;
-}, [] as { category: string; amount: number }[]);
-
+import { IndianRupee, ArrowDown, ArrowUp, Users } from "lucide-react";
 
 const chartConfig = {
   amount: {
@@ -35,7 +23,21 @@ const chartConfig = {
   },
 };
 
-export default function Dashboard() {
+export default function Dashboard({ expenses }: { expenses: any[] }) {
+
+  const chartData = expenses.reduce((acc, expense) => {
+    const existingCategory = acc.find((item) => item.category === expense.category);
+    if (existingCategory) {
+      existingCategory.amount += expense.amount;
+    } else {
+      acc.push({ category: expense.category, amount: expense.amount });
+    }
+    return acc;
+  }, [] as { category: string; amount: number }[]);
+  
+  const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+
   return (
     <div className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -45,7 +47,9 @@ export default function Dashboard() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">₹45,231.89</div>
+            <div className="text-2xl font-bold font-headline">
+              {totalSpent.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
+            </div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
             </p>

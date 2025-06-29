@@ -40,14 +40,18 @@ import {
   Percent,
   IndianRupee,
 } from "lucide-react";
-import { categories, expenseData, getCategory } from "@/lib/data";
+import { categories, getCategory } from "@/lib/data";
 import { getSplitSuggestion } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { cn } from "@/lib/utils";
 
-const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
+const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean) => void, addExpense: (expense: any) => void, groups: any[] }) => {
   const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
+  const [group, setGroup] = useState("");
+  const [notes, setNotes] = useState("");
   const [numPeople, setNumPeople] = useState(2);
   const [suggestion, setSuggestion] = useState<{ method?: string; reasoning?: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -76,9 +80,33 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
       }
     });
   };
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!description || !amount || !category) {
+      toast({
+        variant: "destructive",
+        title: "Missing Fields",
+        description: "Please fill out the description, amount, and category.",
+      });
+      return;
+    }
+
+    const selectedGroup = groups.find(g => g.id === group);
+
+    addExpense({
+      description,
+      amount: parseFloat(amount),
+      category,
+      group: selectedGroup ? selectedGroup.name : "",
+      date: new Date().toISOString().split('T')[0],
+      notes,
+    });
+    setOpen(false);
+  };
 
   return (
-    <>
+    <form onSubmit={handleSubmit}>
       <DialogHeader>
         <DialogTitle>Add New Expense</DialogTitle>
         <DialogDescription>
@@ -96,28 +124,45 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
           <Label htmlFor="amount" className="sm:text-right">
             Amount
           </Label>
-          <Input id="amount" type="number" className="sm:col-span-3" placeholder="e.g., 3000" />
+          <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="sm:col-span-3" placeholder="e.g., 3000" />
         </div>
         <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
           <Label htmlFor="category" className="sm:text-right">
             Category
           </Label>
-          <Select>
+          <Select onValueChange={setCategory} value={category}>
             <SelectTrigger className="sm:col-span-3">
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category) => {
-                const CategoryIcon = category.icon;
+              {categories.map((cat) => {
+                const CategoryIcon = cat.icon;
                 return (
-                  <SelectItem key={category.value} value={category.value}>
+                  <SelectItem key={cat.value} value={cat.value}>
                     <div className="flex items-center gap-2">
                       <CategoryIcon className="h-4 w-4" />
-                      <span>{category.label}</span>
+                      <span>{cat.label}</span>
                     </div>
                   </SelectItem>
                 );
               })}
+            </SelectContent>
+          </Select>
+        </div>
+         <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="group" className="sm:text-right">
+            Group
+          </Label>
+          <Select onValueChange={setGroup} value={group}>
+            <SelectTrigger className="sm:col-span-3">
+              <SelectValue placeholder="Select a group (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -134,7 +179,7 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
           <Label htmlFor="notes" className="pt-2 sm:text-right">
             Notes
           </Label>
-          <Textarea id="notes" className="sm:col-span-3" placeholder="Add any extra details..." />
+          <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="sm:col-span-3" placeholder="Add any extra details..." />
         </div>
         
         <Card>
@@ -149,7 +194,7 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
                 <Input id="people" type="number" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="sm:col-span-3" />
             </div>
             
-            <Button onClick={handleSuggestion} disabled={isPending} className="w-full">
+            <Button onClick={handleSuggestion} disabled={isPending} className="w-full" type="button">
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Suggest Split Method
             </Button>
@@ -162,23 +207,23 @@ const ExpenseForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
             )}
             
             <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <Button variant="outline"><IndianRupee className="mr-2 h-4 w-4"/>Equal</Button>
-                <Button variant="outline"><Users className="mr-2 h-4 w-4"/>Amounts</Button>
-                <Button variant="outline"><Percent className="mr-2 h-4 w-4"/>Percentage</Button>
+                <Button variant="outline" type="button"><IndianRupee className="mr-2 h-4 w-4"/>Equal</Button>
+                <Button variant="outline" type="button"><Users className="mr-2 h-4 w-4"/>Amounts</Button>
+                <Button variant="outline" type="button"><Percent className="mr-2 h-4 w-4"/>Percentage</Button>
             </div>
           </CardContent>
         </Card>
 
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+        <Button variant="outline" onClick={() => setOpen(false)} type="button">Cancel</Button>
         <Button type="submit">Add Expense</Button>
       </DialogFooter>
-    </>
+    </form>
   );
 };
 
-export default function Expenses() {
+export default function Expenses({ expenses, groups, addExpense }: { expenses: any[], groups: any[], addExpense: (expense: any) => void }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -192,7 +237,7 @@ export default function Expenses() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
-            <ExpenseForm setOpen={setOpen} />
+            <ExpenseForm setOpen={setOpen} addExpense={addExpense} groups={groups} />
           </DialogContent>
         </Dialog>
       </div>
@@ -215,7 +260,7 @@ export default function Expenses() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenseData.map((expense) => {
+                {expenses.map((expense) => {
                   const category = getCategory(expense.category);
                   const CategoryIcon = category.icon;
                   return (
@@ -243,7 +288,7 @@ export default function Expenses() {
 
           {/* Mobile Card List */}
           <div className="grid gap-4 md:hidden">
-            {expenseData.map((expense) => {
+            {expenses.map((expense) => {
               const category = getCategory(expense.category);
               const CategoryIcon = category.icon;
               return (

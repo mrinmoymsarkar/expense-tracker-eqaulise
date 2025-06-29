@@ -37,9 +37,13 @@ import Dashboard from "@/components/dashboard";
 import Expenses from "@/components/expenses";
 import Groups from "@/components/groups";
 import Settings from "@/components/settings";
-import { Separator } from "@/components/ui/separator";
+import { expenseData as initialExpenseData, groupData as initialGroupData } from "@/lib/data";
 
 type View = "dashboard" | "expenses" | "groups" | "settings";
+
+type Expense = (typeof initialExpenseData)[0];
+type Group = (typeof initialGroupData)[0];
+
 
 const viewConfig: Record<
   View,
@@ -65,8 +69,53 @@ const viewConfig: Record<
 
 const AppLayout = () => {
   const [activeView, setActiveView] = React.useState<View>("dashboard");
+  const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenseData);
+  const [groups, setGroups] = React.useState<Group[]>(initialGroupData);
+
   const { isMobile } = useSidebar();
   const ActiveComponent = viewConfig[activeView].component;
+
+  const addExpense = (newExpenseData: Omit<Expense, "id">) => {
+    const newExpense = {
+      ...newExpenseData,
+      id: Date.now().toString(),
+    };
+    setExpenses(prev => [newExpense, ...prev]);
+
+    if (newExpense.group) {
+      const groupToUpdate = groups.find(g => g.name === newExpense.group);
+      if (groupToUpdate) {
+        setGroups(prev => 
+          prev.map(g => 
+            g.name === newExpense.group 
+              ? { ...g, totalExpenses: g.totalExpenses + newExpense.amount }
+              : g
+          )
+        );
+      }
+    }
+  };
+
+  const addGroup = (newGroupData: Pick<Group, "name" | "imageUrl" | "imageHint">) => {
+    const newGroup = {
+      ...newGroupData,
+      id: Date.now().toString(),
+      totalExpenses: 0,
+      members: [
+        { initials: "SN", avatarUrl: "https://placehold.co/40x40.png" },
+      ],
+    };
+    setGroups(prev => [newGroup, ...prev]);
+  };
+
+  const componentProps: any = {
+    dashboard: { expenses },
+    expenses: { expenses, groups, addExpense },
+    groups: { groups, addGroup },
+    settings: {},
+  };
+  const activeProps = componentProps[activeView];
+
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -140,7 +189,7 @@ const AppLayout = () => {
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <ActiveComponent />
+          <ActiveComponent {...activeProps} />
         </main>
       </SidebarInset>
     </div>
