@@ -12,17 +12,36 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  type ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { IndianRupee, ArrowDown, ArrowUp, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { categories } from "@/lib/data";
 
-const chartConfig = {
+const categoryChartConfig = {
   amount: {
     label: "Amount",
     color: "hsl(var(--primary))",
   },
-};
+} satisfies ChartConfig;
+
+const categoryColors = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+];
+
+const monthlyChartConfig = categories.reduce((config, category, index) => {
+  config[category.value] = {
+    label: category.label,
+    color: categoryColors[index % categoryColors.length],
+  };
+  return config;
+}, {} as ChartConfig);
+
 
 export default function Dashboard({ expenses }: { expenses: any[] }) {
 
@@ -40,20 +59,22 @@ export default function Dashboard({ expenses }: { expenses: any[] }) {
 
   const monthlyChartData = React.useMemo(() => {
     const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
     const dataByMonth = expenses.reduce((acc, expense) => {
       const month = new Date(expense.date).toLocaleString('default', { month: 'short' });
       if (!acc[month]) {
-        acc[month] = 0;
+        acc[month] = { month };
       }
-      acc[month] += expense.amount;
+      if (!acc[month][expense.category]) {
+        acc[month][expense.category] = 0;
+      }
+      acc[month][expense.category] += expense.amount;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, any>);
 
-    return Object.entries(dataByMonth).map(([month, amount]) => ({
-      month,
-      amount
-    })).sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+    return Object.values(dataByMonth).sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
   }, [expenses]);
+
   
   const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
@@ -131,7 +152,7 @@ export default function Dashboard({ expenses }: { expenses: any[] }) {
           </CardHeader>
           <CardContent>
             <TabsContent value="category" className="m-0">
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ChartContainer config={categoryChartConfig} className="h-[300px] w-full">
                 <BarChart
                   data={categoryChartData}
                   accessibilityLayer
@@ -160,7 +181,7 @@ export default function Dashboard({ expenses }: { expenses: any[] }) {
               </ChartContainer>
             </TabsContent>
             <TabsContent value="monthly" className="m-0">
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ChartContainer config={monthlyChartConfig} className="h-[300px] w-full">
                 <BarChart
                   data={monthlyChartData}
                   accessibilityLayer
@@ -174,16 +195,23 @@ export default function Dashboard({ expenses }: { expenses: any[] }) {
                     axisLine={false}
                   />
                   <YAxis
-                    tickFormatter={(value) => `₹${value}`}
+                    tickFormatter={(value) => `₹${Number(value).toLocaleString()}`}
                     tickLine={false}
                     axisLine={false}
                     tickMargin={10}
                   />
                   <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
+                    content={<ChartTooltipContent indicator="dot" hideLabel />}
                   />
-                  <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
+                  {Object.keys(monthlyChartConfig).map((key) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      fill={`var(--color-${key})`}
+                      stackId="a"
+                    />
+                  ))}
                 </BarChart>
               </ChartContainer>
             </TabsContent>
