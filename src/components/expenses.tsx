@@ -39,8 +39,11 @@ import {
   Users,
   Percent,
   IndianRupee,
+  CreditCard,
+  Smartphone,
+  Wallet,
 } from "lucide-react";
-import { categories, getCategory } from "@/lib/data";
+import { categories, getCategory, paymentMethods, getPaymentMethod } from "@/lib/data";
 import { getSplitSuggestion, processReceipt } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -51,6 +54,7 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [group, setGroup] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [notes, setNotes] = useState("");
   const [numPeople, setNumPeople] = useState(2);
   const [suggestion, setSuggestion] = useState<{ method?: string; reasoning?: string } | null>(null);
@@ -143,11 +147,11 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || !amount || !category) {
+    if (!description || !amount || !category || !paymentMethod) {
       toast({
         variant: "destructive",
         title: "Missing Fields",
-        description: "Please fill out the description, amount, and category.",
+        description: "Please fill out description, amount, category, and payment method.",
       });
       return;
     }
@@ -161,6 +165,7 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
       group: selectedGroup ? selectedGroup.name : "",
       date: new Date().toISOString().split('T')[0],
       notes,
+      paymentMethod,
     });
     setOpen(false);
   };
@@ -228,8 +233,33 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
                 return (
                   <SelectItem key={cat.value} value={cat.value}>
                     <div className="flex items-center gap-2">
-                      <CategoryIcon className="h-4 w-4" />
-                      <span>{cat.label}</span>
+                      <Badge variant="outline" className={cn("w-fit items-center gap-2 border-none", cat.color)}>
+                        <CategoryIcon className="h-4 w-4" />
+                        <span>{cat.label}</span>
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="paymentMethod" className="sm:text-right">
+            Paid By
+          </Label>
+          <Select onValueChange={setPaymentMethod} value={paymentMethod}>
+            <SelectTrigger className="sm:col-span-3">
+              <SelectValue placeholder="Select a payment method" />
+            </SelectTrigger>
+            <SelectContent>
+              {paymentMethods.map((method) => {
+                const MethodIcon = method.icon;
+                return (
+                  <SelectItem key={method.value} value={method.value}>
+                    <div className="flex items-center gap-2">
+                      <MethodIcon className="h-4 w-4" />
+                      <span>{method.label}</span>
                     </div>
                   </SelectItem>
                 );
@@ -337,6 +367,7 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                   <TableHead>Category</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Group</TableHead>
+                  <TableHead>Paid By</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
@@ -344,6 +375,8 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                 {expenses.map((expense) => {
                   const category = getCategory(expense.category);
                   const CategoryIcon = category.icon;
+                  const paymentMethod = getPaymentMethod(expense.paymentMethod);
+                  const PaymentIcon = paymentMethod.icon;
                   return (
                     <TableRow key={expense.id}>
                       <TableCell className="font-medium">
@@ -356,7 +389,13 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                         </Badge>
                       </TableCell>
                       <TableCell>{expense.date}</TableCell>
-                      <TableCell>{expense.group}</TableCell>
+                      <TableCell>{expense.group || "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <PaymentIcon className="h-4 w-4" />
+                          <span>{paymentMethod.label}</span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right font-mono">
                         ₹{expense.amount.toFixed(2)}
                       </TableCell>
@@ -372,6 +411,8 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
             {expenses.map((expense) => {
               const category = getCategory(expense.category);
               const CategoryIcon = category.icon;
+              const paymentMethod = getPaymentMethod(expense.paymentMethod);
+              const PaymentIcon = paymentMethod.icon;
               return (
                 <div key={expense.id} className="rounded-lg border p-4 flex flex-col gap-2">
                   <div className="flex justify-between items-start">
@@ -385,13 +426,19 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                       <CategoryIcon className="h-3.5 w-3.5" />
                       <span className="text-xs">{expense.category}</span>
                     </Badge>
-                    <span>{expense.date}</span>
-                  </div>
-                  {expense.group && (
-                    <div className="text-xs text-muted-foreground">
-                      Group: <span className="font-medium">{expense.group}</span>
+                    <div className="flex items-center gap-1">
+                      <PaymentIcon className="h-4 w-4" />
+                      <span>{paymentMethod.label}</span>
                     </div>
-                  )}
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>{expense.date}</span>
+                    {expense.group && (
+                      <span>
+                        Group: <span className="font-medium">{expense.group}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}

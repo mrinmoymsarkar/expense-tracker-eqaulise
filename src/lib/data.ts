@@ -1,4 +1,3 @@
-
 import {
   Utensils,
   ShoppingCart,
@@ -8,6 +7,9 @@ import {
   HeartPulse,
   type LucideIcon,
   Plane,
+  CreditCard,
+  Smartphone,
+  Wallet,
 } from "lucide-react";
 
 export const categories: {
@@ -20,7 +22,8 @@ export const categories: {
     value: "Food",
     label: "Food & Dining",
     icon: Utensils,
-    color: "border-transparent bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300",
+    color:
+      "border-transparent bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
   },
   {
     value: "Shopping",
@@ -68,6 +71,34 @@ export const getCategory = (categoryValue: string) => {
   return category || categories[0];
 };
 
+export const paymentMethods: {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    value: "Card",
+    label: "Card",
+    icon: CreditCard,
+  },
+  {
+    value: "UPI",
+    label: "UPI",
+    icon: Smartphone,
+  },
+  {
+    value: "Cash",
+    label: "Cash",
+    icon: Wallet,
+  },
+];
+
+export const getPaymentMethod = (paymentMethodValue: string) => {
+  const method = paymentMethods.find((m) => m.value === paymentMethodValue);
+  return method || paymentMethods[0];
+};
+
+
 export const expenseData = [
   {
     id: "1",
@@ -76,6 +107,7 @@ export const expenseData = [
     date: "2024-07-22",
     amount: 3250.0,
     group: "Office Buddies",
+    paymentMethod: "Card",
   },
   {
     id: "2",
@@ -84,6 +116,7 @@ export const expenseData = [
     date: "2024-07-21",
     amount: 1200.0,
     group: "Friends Hangout",
+    paymentMethod: "UPI",
   },
   {
     id: "3",
@@ -92,6 +125,7 @@ export const expenseData = [
     date: "2024-07-20",
     amount: 2500.5,
     group: "Flatmates",
+    paymentMethod: "Card",
   },
   {
     id: "4",
@@ -100,6 +134,7 @@ export const expenseData = [
     date: "2024-07-18",
     amount: 18500.0,
     group: "Goa Trip '24",
+    paymentMethod: "Card",
   },
   {
     id: "5",
@@ -108,6 +143,7 @@ export const expenseData = [
     date: "2024-07-17",
     amount: 450.0,
     group: "Office Buddies",
+    paymentMethod: "UPI",
   },
   {
     id: "6",
@@ -116,6 +152,7 @@ export const expenseData = [
     date: "2024-07-15",
     amount: 1800.0,
     group: "Flatmates",
+    paymentMethod: "UPI",
   },
   {
     id: "7",
@@ -124,6 +161,7 @@ export const expenseData = [
     date: "2024-06-15",
     amount: 4200.0,
     group: "Flatmates",
+    paymentMethod: "Cash",
   },
   {
     id: "8",
@@ -132,6 +170,7 @@ export const expenseData = [
     date: "2024-06-10",
     amount: 3000.0,
     group: "Friends Hangout",
+    paymentMethod: "UPI",
   },
   {
     id: "9",
@@ -140,6 +179,7 @@ export const expenseData = [
     date: "2024-06-05",
     amount: 1500.0,
     group: "",
+    paymentMethod: "Card",
   },
   {
     id: "10",
@@ -148,6 +188,7 @@ export const expenseData = [
     date: "2024-05-25",
     amount: 800.0,
     group: "",
+    paymentMethod: "Cash",
   },
   {
     id: "11",
@@ -156,6 +197,7 @@ export const expenseData = [
     date: "2024-05-12",
     amount: 5500.0,
     group: "",
+    paymentMethod: "Card",
   },
 ];
 
