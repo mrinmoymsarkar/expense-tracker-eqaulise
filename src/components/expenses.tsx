@@ -42,16 +42,21 @@ import {
   CreditCard,
   Smartphone,
   Wallet,
+  CalendarIcon,
 } from "lucide-react";
 import { categories, getCategory, paymentMethods, getPaymentMethod } from "@/lib/data";
 import { getSplitSuggestion, processReceipt } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
+import { format } from "date-fns";
 
 const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean) => void, addExpense: (expense: any) => void, groups: any[] }) => {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [category, setCategory] = useState("");
   const [group, setGroup] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -163,7 +168,7 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
       amount: parseFloat(amount),
       category,
       group: selectedGroup ? selectedGroup.name : "",
-      date: new Date().toISOString().split('T')[0],
+      date: date ? format(date, 'yyyy-MM-dd') : new Date().toISOString().split('T')[0],
       notes,
       paymentMethod,
     });
@@ -218,6 +223,33 @@ const ExpenseForm = ({ setOpen, addExpense, groups }: { setOpen: (open: boolean)
             Amount
           </Label>
           <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="sm:col-span-3" placeholder="e.g., 3000" />
+        </div>
+        <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
+          <Label htmlFor="date" className="sm:text-right">
+            Date
+          </Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "sm:col-span-3 justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-4 sm:items-center sm:gap-x-4">
           <Label htmlFor="category" className="sm:text-right">
@@ -388,7 +420,7 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                           <span>{expense.category}</span>
                         </Badge>
                       </TableCell>
-                      <TableCell>{expense.date}</TableCell>
+                      <TableCell>{format(new Date(expense.date), "PPP")}</TableCell>
                       <TableCell>{expense.group || "-"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -432,7 +464,7 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-xs text-muted-foreground">
-                    <span>{expense.date}</span>
+                    <span>{format(new Date(expense.date), "PPP")}</span>
                     {expense.group && (
                       <span>
                         Group: <span className="font-medium">{expense.group}</span>
@@ -448,3 +480,5 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
     </div>
   );
 }
+
+    
