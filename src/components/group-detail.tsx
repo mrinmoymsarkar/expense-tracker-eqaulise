@@ -41,24 +41,24 @@ export default function GroupDetail({ group, onBack }: { group: any, onBack: () 
   return (
     <div className="grid gap-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={onBack}>
+        <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Back</span>
         </Button>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
             <Image
                 src={group.imageUrl}
                 alt={group.name}
                 width={64}
                 height={64}
-                className="rounded-lg object-cover aspect-square"
+                className="rounded-lg object-cover aspect-square shrink-0"
                 data-ai-hint={group.imageHint}
             />
-            <div>
-                <h1 className="text-2xl font-bold font-headline">{group.name}</h1>
+            <div className="min-w-0">
+                <h1 className="text-2xl font-bold font-headline truncate">{group.name}</h1>
                 <div className="flex items-center text-sm text-muted-foreground">
-                    <IndianRupee className="h-4 w-4 mr-1" />
-                    <span>{group.totalExpenses.toLocaleString()} in total expenses</span>
+                    <IndianRupee className="h-4 w-4 mr-1 shrink-0" />
+                    <span className="truncate">{group.totalExpenses.toLocaleString()} in total expenses</span>
                 </div>
             </div>
         </div>
@@ -73,7 +73,7 @@ export default function GroupDetail({ group, onBack }: { group: any, onBack: () 
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground truncate">
                     You are owed ₹{youAreOwed.toLocaleString()}, and you owe ₹{youOwe.toLocaleString()}
                 </div>
             </CardContent>
@@ -107,21 +107,21 @@ export default function GroupDetail({ group, onBack }: { group: any, onBack: () 
           <div className="space-y-4">
             {settlementData.map((s, index) => (
                 <div key={index}>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
+                    <div className="flex items-center justify-between gap-2">
+                         <div className="flex items-center gap-2 min-w-0">
+                            <Avatar className="h-8 w-8 shrink-0">
                                 <AvatarImage src={s.from.avatarUrl} data-ai-hint="person avatar" />
                                 <AvatarFallback>{s.from.name.substring(0, 2)}</AvatarFallback>
                             </Avatar>
                             <span className="font-medium text-sm truncate">{s.from.name}</span>
                         </div>
-                        <div className="flex flex-col items-center text-center text-muted-foreground">
+                        <div className="flex flex-col items-center text-center text-muted-foreground px-2">
                             <span className="text-xs">owes</span>
-                             <span className="font-mono text-sm text-foreground font-semibold">₹{s.amount.toLocaleString()}</span>
+                             <span className="font-mono text-sm text-foreground font-semibold whitespace-nowrap">₹{s.amount.toLocaleString()}</span>
                         </div>
-                         <div className="flex items-center gap-2 justify-end">
+                         <div className="flex items-center gap-2 justify-end min-w-0">
                             <span className="font-medium text-sm text-right truncate">{s.to.name}</span>
-                            <Avatar className="h-8 w-8">
+                            <Avatar className="h-8 w-8 shrink-0">
                                 <AvatarImage src={s.to.avatarUrl} data-ai-hint="person avatar" />
                                 <AvatarFallback>{s.to.name.substring(0, 2)}</AvatarFallback>
                             </Avatar>

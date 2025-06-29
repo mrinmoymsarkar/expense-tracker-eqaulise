@@ -464,9 +464,9 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
               const PaymentIcon = paymentMethod.icon;
               return (
                 <div key={expense.id} className="rounded-lg border p-4 flex flex-col gap-2">
-                  <div className="flex justify-between items-start">
-                    <span className="font-medium pr-2 break-words">{expense.description}</span>
-                    <span className="font-mono font-semibold text-lg whitespace-nowrap">
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="font-medium break-all">{expense.description}</span>
+                    <span className="font-mono font-semibold text-lg whitespace-nowrap shrink-0">
                       ₹{expense.amount.toFixed(2)}
                     </span>
                   </div>
@@ -483,7 +483,7 @@ export default function Expenses({ expenses, groups, addExpense }: { expenses: a
                   <div className="flex justify-between items-center text-xs text-muted-foreground">
                     <span>{format(new Date(expense.date), "PPP")}</span>
                     {expense.group && (
-                      <span>
+                      <span className="truncate">
                         Group: <span className="font-medium">{expense.group}</span>
                       </span>
                     )}

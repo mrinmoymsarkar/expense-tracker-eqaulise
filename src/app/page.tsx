@@ -199,9 +199,9 @@ const AppLayout = () => {
 
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {isMobile && <SidebarTrigger />}
-            <h2 className="font-headline text-xl font-semibold">
+            <h2 className="font-headline text-xl font-semibold truncate">
               {selectedGroup ? selectedGroup.name : viewConfig[activeView].title}
             </h2>
           </div>
