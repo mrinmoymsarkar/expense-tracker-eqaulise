@@ -1,9 +1,7 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import type { User } from 'firebase/auth';
 import { Spinner } from '@/components/icons';
 
 type AuthContextType = {
@@ -18,20 +16,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    let unsubscribe: (() => void) | undefined;
 
-    return () => unsubscribe();
+    // Dynamic import keeps firebase off the server — getAuth uses localStorage
+    Promise.all([import('@/lib/firebase'), import('firebase/auth')]).then(
+      ([{ auth }, { onAuthStateChanged }]) => {
+        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+          if (firebaseUser) {
+            import('@/lib/db/user')
+              .then(({ ensureUserProfile }) => ensureUserProfile(firebaseUser))
+              .catch(console.error);
+          }
+          setUser(firebaseUser);
+          setLoading(false);
+        });
+      }
+    );
+
+    return () => unsubscribe?.();
   }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
       {loading ? (
-         <div className="flex h-screen items-center justify-center bg-background">
-            <Spinner className="h-12 w-12 animate-spin text-primary" />
-         </div>
+        <div className="flex h-screen items-center justify-center bg-background">
+          <Spinner className="h-12 w-12 animate-spin text-primary" />
+        </div>
       ) : (
         children
       )}

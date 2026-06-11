@@ -5,74 +5,79 @@
 
 @layer base {
   :root {
-    --background: 240 5% 96%;
-    --foreground: 240 10% 3.9%;
-    --card: 240 5% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 240 5% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262 84% 52%;
-    --primary-foreground: 262 20% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 10% 3.9%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 45 90% 55%;
-    --accent-foreground: 45 15% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 84% 52%;
-    --radius: 0.5rem;
-    --chart-1: 262 84% 52%;
-    --chart-2: 45 90% 55%;
-    --chart-3: 160 70% 45%;
-    --chart-4: 350 80% 60%;
-    --chart-5: 210 80% 60%;
-    --sidebar-background: 240 5% 98%;
-    --sidebar-foreground: 240 10% 15%;
-    --sidebar-primary: 262 84% 52%;
-    --sidebar-primary-foreground: 262 20% 98%;
-    --sidebar-accent: 240 5% 92%;
-    --sidebar-accent-foreground: 240 10% 10%;
-    --sidebar-border: 240 5% 88%;
-    --sidebar-ring: 262 84% 52%;
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sat: env(safe-area-inset-top, 0px);
+    /* "Day ledger" — warm paper, ink green, marigold, terracotta */
+    --background: 42 36% 94%;
+    --foreground: 165 28% 11%;
+    --card: 42 40% 97%;
+    --card-foreground: 165 28% 11%;
+    --popover: 42 40% 97%;
+    --popover-foreground: 165 28% 11%;
+    --primary: 163 48% 21%;
+    --primary-foreground: 42 40% 96%;
+    --secondary: 42 22% 88%;
+    --secondary-foreground: 165 28% 14%;
+    --muted: 42 22% 89%;
+    --muted-foreground: 160 10% 36%;
+    --accent: 36 92% 52%;
+    --accent-foreground: 28 60% 10%;
+    --destructive: 12 68% 44%;
+    --destructive-foreground: 42 40% 96%;
+    --border: 44 18% 80%;
+    --input: 44 18% 76%;
+    --ring: 163 48% 28%;
+    --radius: 0.25rem;
+    --chart-1: 163 48% 26%;
+    --chart-2: 36 92% 50%;
+    --chart-3: 12 60% 48%;
+    --chart-4: 199 38% 42%;
+    --chart-5: 84 32% 42%;
+    /* Ink-green sidebar in both themes — the khata cover */
+    --sidebar-background: 164 30% 10%;
+    --sidebar-foreground: 42 32% 88%;
+    --sidebar-primary: 36 92% 55%;
+    --sidebar-primary-foreground: 28 60% 10%;
+    --sidebar-accent: 163 24% 17%;
+    --sidebar-accent-foreground: 42 36% 92%;
+    --sidebar-border: 163 22% 18%;
+    --sidebar-ring: 36 92% 55%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 240 5% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 240 5% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 240 5% 98%;
-    --primary: 262 84% 62%;
-    --primary-foreground: 262 20% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 240 5% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 45 90% 65%;
-    --accent-foreground: 45 20% 5%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262 84% 62%;
-    --chart-1: 262 84% 62%;
-    --chart-2: 45 90% 65%;
-    --chart-3: 160 70% 55%;
-    --chart-4: 350 80% 70%;
-    --chart-5: 210 80% 70%;
-    --sidebar-background: 240 10% 7%;
-    --sidebar-foreground: 240 5% 95%;
-    --sidebar-primary: 262 84% 62%;
-    --sidebar-primary-foreground: 262 20% 10%;
-    --sidebar-accent: 240 10% 18%;
-    --sidebar-accent-foreground: 240 5% 99%;
-    --sidebar-border: 240 10% 15%;
-    --sidebar-ring: 262 84% 62%;
+    /* "Night ledger" — deep ink, mint, lamplight marigold */
+    --background: 166 26% 7%;
+    --foreground: 42 30% 88%;
+    --card: 165 24% 10%;
+    --card-foreground: 42 30% 88%;
+    --popover: 165 24% 10%;
+    --popover-foreground: 42 30% 88%;
+    --primary: 158 42% 52%;
+    --primary-foreground: 166 30% 7%;
+    --secondary: 164 18% 15%;
+    --secondary-foreground: 42 30% 88%;
+    --muted: 164 18% 14%;
+    --muted-foreground: 42 12% 60%;
+    --accent: 36 90% 56%;
+    --accent-foreground: 28 60% 10%;
+    --destructive: 12 70% 56%;
+    --destructive-foreground: 166 26% 7%;
+    --border: 163 14% 19%;
+    --input: 163 14% 22%;
+    --ring: 158 42% 52%;
+    --chart-1: 158 42% 52%;
+    --chart-2: 36 90% 58%;
+    --chart-3: 12 70% 60%;
+    --chart-4: 199 45% 60%;
+    --chart-5: 84 35% 55%;
+    --sidebar-background: 166 30% 5%;
+    --sidebar-foreground: 42 30% 88%;
+    --sidebar-primary: 36 90% 58%;
+    --sidebar-primary-foreground: 28 60% 10%;
+    --sidebar-accent: 164 20% 12%;
+    --sidebar-accent-foreground: 42 30% 92%;
+    --sidebar-border: 164 18% 13%;
+    --sidebar-ring: 36 90% 58%;
   }
 }
 
@@ -82,5 +87,51 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  ::selection {
+    background: hsl(var(--accent) / 0.9);
+    color: hsl(var(--accent-foreground));
+  }
+}
+
+/* Paper grain laid over everything, like stock that's been handled */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@layer utilities {
+  /* Tabular figures — every rupee column lines up like a ruled ledger */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Ruled notebook lines for hero panels */
+  .ledger-lines {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 35px,
+      hsl(var(--sidebar-border)) 35px,
+      hsl(var(--sidebar-border)) 36px
+    );
+  }
+  .anim-rise {
+    animation: rise 0.7s cubic-bezier(0.22, 0.61, 0.21, 1) both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

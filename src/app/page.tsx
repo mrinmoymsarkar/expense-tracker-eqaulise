@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/auth-provider';
-import { auth } from '@/lib/firebase';
+import { useData } from '@/components/providers/data-provider';
 import {
   Avatar,
   AvatarFallback,
@@ -21,7 +21,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -33,27 +32,20 @@ import {
   Bell,
   LogOut,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 import { EqualizeLogo } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Dashboard from "@/components/dashboard";
-import Expenses, { ExpenseForm } from "@/components/expenses";
+import Expenses from "@/components/expenses";
 import Groups from "@/components/groups";
 import Settings from "@/components/settings";
 import GroupDetail from "@/components/group-detail";
-import { expenseData as initialExpenseData, groupData as initialGroupData } from "@/lib/data";
+import { MobileNav, type MobileView } from "@/components/mobile-nav";
+import { AddExpenseSheet } from "@/components/add-expense-sheet";
 import { cn } from "@/lib/utils";
+import type { ExpenseFormValues, Group } from "@/lib/types";
 
-type View = "dashboard" | "expenses" | "groups" | "settings";
-
-type Expense = (typeof initialExpenseData)[0];
-type Group = (typeof initialGroupData)[0];
-
+type View = MobileView;
 
 const viewConfig: Record<
   View,
@@ -79,57 +71,85 @@ const viewConfig: Record<
 
 const AppLayout = () => {
   const [activeView, setActiveView] = React.useState<View>("dashboard");
-  const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenseData);
-  const [groups, setGroups] = React.useState<Group[]>(initialGroupData);
   const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = React.useState(false);
   const { user } = useAuth();
+  const {
+    groups,
+    personalExpenses,
+    addPersonalExpense,
+    createGroup,
+    joinGroupByCode,
+    summary,
+  } = useData();
 
   const handleLogout = async () => {
+    const { auth } = await import('@/lib/firebase');
     await auth.signOut();
   };
 
   const { isMobile, setOpenMobile } = useSidebar();
   const ActiveComponent = viewConfig[activeView].component;
 
-  const addExpense = (newExpenseData: Omit<Expense, "id">) => {
-    const newExpense = {
-      ...newExpenseData,
-      id: Date.now().toString(),
-    };
-    setExpenses(prev => [newExpense, ...prev]);
+  // Legacy view shape (ISO date string + group name) consumed by the feature
+  // components until they migrate to Firestore types directly.
+  const viewExpenses = React.useMemo(() => {
+    const personal = personalExpenses.map((e) => ({
+      id: e.id,
+      description: e.description,
+      amount: e.amount,
+      category: e.category,
+      date: e.date.toDate().toISOString(),
+      group: "",
+      groupId: null as string | null,
+      paymentMethod: e.paymentMethod,
+      notes: e.notes,
+    }));
+    const fromGroups = summary.allGroupExpenses.map((e) => ({
+      id: e.id,
+      description: e.description,
+      amount: e.amount,
+      category: e.category,
+      date: e.date.toDate().toISOString(),
+      group: e.groupName,
+      groupId: e.groupId as string | null,
+      paymentMethod: e.paymentMethod,
+      notes: e.notes,
+      paidBy: e.paidBy,
+      splitMethod: e.splitMethod,
+      splits: e.splits,
+    }));
+    return [...personal, ...fromGroups].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [personalExpenses, summary.allGroupExpenses]);
 
-    if (newExpense.group) {
-      const groupToUpdate = groups.find(g => g.name === newExpense.group);
-      if (groupToUpdate) {
-        setGroups(prev => 
-          prev.map(g => 
-            g.name === newExpense.group 
-              ? { ...g, totalExpenses: g.totalExpenses + newExpense.amount }
-              : g
-          )
-        );
-      }
+  const handleAddExpense = async (values: ExpenseFormValues) => {
+    if (values.groupId) {
+      const { addGroupExpense } = await import('@/lib/db/expenses');
+      if (!user) throw new Error('Not authenticated');
+      await addGroupExpense(values.groupId, user.uid, values);
+    } else {
+      await addPersonalExpense(values);
     }
-    setIsAddExpenseOpen(false);
   };
 
-  const addGroup = (newGroupData: Pick<Group, "name" | "imageUrl" | "imageHint">) => {
-    const newGroup = {
-      ...newGroupData,
-      id: Date.now().toString(),
-      totalExpenses: 0,
-      members: [
-        { initials: "SN", avatarUrl: "https://placehold.co/40x40.png" },
-      ],
-    };
-    setGroups(prev => [newGroup, ...prev]);
+  const handleAddGroup = async (newGroupData: { name: string }) => {
+    await createGroup(newGroupData);
+  };
+
+  const handleNavigate = (view: View) => {
+    setActiveView(view);
+    setSelectedGroup(null);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
   };
 
   const componentProps: any = {
-    dashboard: { expenses },
-    expenses: { expenses, groups, addExpense },
-    groups: { groups, addGroup, onSelectGroup: setSelectedGroup },
+    dashboard: { expenses: viewExpenses, summary },
+    expenses: { expenses: viewExpenses, groups },
+    groups: { groups, addGroup: handleAddGroup, joinGroupByCode, onSelectGroup: setSelectedGroup },
     settings: {},
   };
   const activeProps = componentProps[activeView];
@@ -140,8 +160,10 @@ const AppLayout = () => {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <EqualizeLogo className="size-7 text-primary" />
-            <h1 className="font-headline text-xl font-semibold">Equalize</h1>
+            <EqualizeLogo className="size-7 shrink-0 text-sidebar-primary" />
+            <h1 className="font-headline text-xl font-semibold italic group-data-[collapsible=icon]:hidden">
+              Equalize
+            </h1>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -152,14 +174,7 @@ const AppLayout = () => {
               return (
                 <SidebarMenuItem key={view}>
                   <SidebarMenuButton
-                    size={isMobile ? "lg" : "default"}
-                    onClick={() => {
-                      setActiveView(view);
-                      setSelectedGroup(null);
-                      if (isMobile) {
-                        setOpenMobile(false);
-                      }
-                    }}
+                    onClick={() => handleNavigate(view)}
                     isActive={activeView === view && !selectedGroup}
                     tooltip={{ children: viewConfig[view].title }}
                   >
@@ -174,28 +189,20 @@ const AppLayout = () => {
         <SidebarFooter>
           <SidebarMenu>
              <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} size={isMobile ? "lg" : "default"} tooltip={{children: 'Logout'}}>
+              <SidebarMenuButton onClick={handleLogout} tooltip={{children: 'Logout'}}>
                 <LogOut />
                 <span>Logout</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-               <div className={cn(
-                  "transition-colors rounded-md",
-                  isMobile
-                  ? "flex-col items-center gap-2 p-4 text-center"
-                  : "flex items-center gap-2 p-2"
-                )}>
-                  <Avatar className={cn("transition-all", isMobile ? "h-16 w-16" : "h-8 w-8")}>
+               <div className="flex items-center gap-2 p-2 transition-colors rounded-md">
+                  <Avatar className="h-8 w-8 transition-all">
                     <AvatarImage src={user?.photoURL || "https://placehold.co/40x40.png"} alt={user?.displayName || "User"} data-ai-hint="profile picture" />
                     <AvatarFallback>{user?.displayName ? user.displayName.slice(0, 2).toUpperCase() : user?.email?.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
-                  <div className={cn(
-                    "flex flex-col",
-                    isMobile ? "items-center" : ""
-                  )}>
-                    <span className={cn("font-medium", isMobile ? "text-base" : "text-sm")}>{user?.displayName || user?.email}</span>
-                    <span className={cn("text-muted-foreground", isMobile ? "text-sm" : "text-xs")}>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{user?.displayName || user?.email}</span>
+                    <span className="text-xs text-muted-foreground">
                       {user?.email}
                     </span>
                   </div>
@@ -208,12 +215,20 @@ const AppLayout = () => {
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
           <div className="flex items-center gap-2 min-w-0">
-            {isMobile && <SidebarTrigger />}
-            <h2 className="font-headline text-xl font-semibold truncate">
+            <EqualizeLogo className="size-6 shrink-0 text-primary md:hidden" />
+            <h2 className="truncate font-headline text-2xl font-medium">
               {selectedGroup ? selectedGroup.name : viewConfig[activeView].title}
             </h2>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              className="hidden md:inline-flex"
+              size="sm"
+              onClick={() => setIsAddExpenseOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Expense
+            </Button>
             <Button size="icon" variant="ghost">
               <Bell className="h-5 w-5" />
               <span className="sr-only">Notifications</span>
@@ -221,7 +236,7 @@ const AppLayout = () => {
             <ThemeToggle />
           </div>
         </header>
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-auto p-4 pb-[calc(5rem+var(--sab))] sm:p-6 sm:pb-[calc(5rem+var(--sab))] md:pb-6">
            {selectedGroup ? (
             <GroupDetail group={selectedGroup} onBack={() => setSelectedGroup(null)} />
           ) : (
@@ -229,20 +244,20 @@ const AppLayout = () => {
           )}
         </main>
       </SidebarInset>
-      
-      {['dashboard', 'expenses', 'groups'].includes(activeView) && !selectedGroup && (
-        <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
-          <DialogTrigger asChild>
-            <Button className="fixed bottom-6 right-6 z-10 h-14 w-14 rounded-full shadow-lg md:h-auto md:w-auto md:rounded-md md:px-4 md:py-2">
-              <Plus className="h-6 w-6 md:mr-2 md:h-4 md:w-4" />
-              <span className="hidden md:inline">Add Expense</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
-            <ExpenseForm setOpen={setIsAddExpenseOpen} addExpense={addExpense} groups={groups} />
-          </DialogContent>
-        </Dialog>
-      )}
+
+      <MobileNav
+        activeView={activeView}
+        onNavigate={handleNavigate}
+        onAddExpense={() => setIsAddExpenseOpen(true)}
+      />
+
+      <AddExpenseSheet
+        open={isAddExpenseOpen}
+        onOpenChange={setIsAddExpenseOpen}
+        groups={groups}
+        defaultGroupId={selectedGroup?.id ?? null}
+        onSubmit={handleAddExpense}
+      />
     </div>
   );
 }

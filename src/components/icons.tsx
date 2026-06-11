@@ -11,8 +11,10 @@ export const EqualizeLogo = (props: SVGProps<SVGSVGElement>) => (
     strokeLinejoin="round"
     {...props}
   >
-    <path d="M16.47,18.53,12,14.06,7.53,18.53" />
-    <path d="M7.53,5.47,12,9.94l4.47-4.47" />
+    {/* A coin stamped with an equals sign — settled accounts */}
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8.5 9.75h7" />
+    <path d="M8.5 14.25h7" />
   </svg>
 );
 

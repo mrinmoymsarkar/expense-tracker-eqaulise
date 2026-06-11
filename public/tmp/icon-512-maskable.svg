@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Full-bleed ink-green background (maskable: no rounded corners, full bleed) -->
+  <rect width="512" height="512" fill="#1c503f"/>
+  <!-- EqualizeLogo: coin with equals sign, rendered in warm paper color -->
+  <!-- Maskable: glyph at ~45% size = 230px, with extra safe-zone padding -->
+  <!-- scale = 230/24 ≈ 9.583, offset = (512 - 230) / 2 ≈ 141 -->
+  <g transform="translate(141, 141) scale(9.583)">
+    <circle cx="12" cy="12" r="9" stroke="#f2efe5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="8.5" y1="9.75" x2="15.5" y2="9.75" stroke="#f2efe5" stroke-width="2" stroke-linecap="round"/>
+    <line x1="8.5" y1="14.25" x2="15.5" y2="14.25" stroke="#f2efe5" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

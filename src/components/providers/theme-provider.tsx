@@ -37,14 +37,11 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = React.useState<Theme>(() => {
-    if (typeof window === 'undefined') {
-      return defaultTheme;
-    }
     try {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme
-    } catch (e) {
-      console.error("Error reading localStorage:", e)
-      return defaultTheme
+      const stored = localStorage.getItem(storageKey);
+      return (stored as Theme) || defaultTheme;
+    } catch {
+      return defaultTheme;
     }
   })
 

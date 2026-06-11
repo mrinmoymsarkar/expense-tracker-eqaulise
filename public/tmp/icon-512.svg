@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Ink-green rounded square background -->
+  <rect width="512" height="512" rx="106" ry="106" fill="#1c503f"/>
+  <!-- EqualizeLogo: coin with equals sign, rendered in warm paper color -->
+  <!-- Original viewBox 0 0 24 24, scaled to ~307px (60% of 512) centered -->
+  <!-- scale = 307/24 ≈ 12.79, offset = (512 - 307) / 2 ≈ 102.5 -->
+  <g transform="translate(102.5, 102.5) scale(12.792)">
+    <circle cx="12" cy="12" r="9" stroke="#f2efe5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="8.5" y1="9.75" x2="15.5" y2="9.75" stroke="#f2efe5" stroke-width="2" stroke-linecap="round"/>
+    <line x1="8.5" y1="14.25" x2="15.5" y2="14.25" stroke="#f2efe5" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

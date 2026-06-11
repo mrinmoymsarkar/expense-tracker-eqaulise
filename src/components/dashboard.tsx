@@ -1,37 +1,43 @@
+'use client';
 
-"use client";
-import React from "react";
+import React from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { IndianRupee, ArrowDown, ArrowUp, Users } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { categories } from "@/lib/data";
+} from '@/components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { categories } from '@/lib/data';
+import { cn } from '@/lib/utils';
+import type { DisplayExpense } from '@/components/expense-list';
+import DashboardMobile from '@/components/dashboard-mobile';
+
+/* ------------------------------------------------------------------ */
+/* Chart configs                                                       */
+/* ------------------------------------------------------------------ */
 
 const categoryChartConfig = {
   amount: {
-    label: "Amount",
-    color: "hsl(var(--primary))",
+    label: 'Amount',
+    color: 'hsl(var(--primary))',
   },
 } satisfies ChartConfig;
 
 const categoryColors = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
 ];
 
 const monthlyChartConfig = categories.reduce((config, category, index) => {
@@ -42,182 +48,246 @@ const monthlyChartConfig = categories.reduce((config, category, index) => {
   return config;
 }, {} as ChartConfig);
 
+/* ------------------------------------------------------------------ */
+/* Summary type                                                        */
+/* ------------------------------------------------------------------ */
 
-export default function Dashboard({ expenses }: { expenses: any[] }) {
+interface DashboardSummary {
+  youOweTotal: number;
+  youAreOwedTotal: number;
+  activeGroupCount: number;
+  loading: boolean;
+  allGroupExpenses?: unknown[];
+}
 
+/* ------------------------------------------------------------------ */
+/* Props                                                               */
+/* ------------------------------------------------------------------ */
+
+interface DashboardProps {
+  expenses: DisplayExpense[];
+  summary: DashboardSummary;
+}
+
+/* ------------------------------------------------------------------ */
+/* Helper: format INR                                                  */
+/* ------------------------------------------------------------------ */
+
+function inr(amount: number): string {
+  return amount.toLocaleString('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Dashboard                                                           */
+/* ------------------------------------------------------------------ */
+
+export default function Dashboard({ expenses, summary }: DashboardProps) {
   const categoryChartData = React.useMemo(() => {
-    return expenses.reduce((acc, expense) => {
-      const existingCategory = acc.find((item) => item.category === expense.category);
-      if (existingCategory) {
-        existingCategory.amount += expense.amount;
-      } else {
-        acc.push({ category: expense.category, amount: expense.amount });
-      }
-      return acc;
-    }, [] as { category: string; amount: number }[]);
+    return expenses.reduce(
+      (acc, expense) => {
+        const existing = acc.find((item) => item.category === expense.category);
+        if (existing) {
+          existing.amount += expense.amount;
+        } else {
+          acc.push({ category: expense.category, amount: expense.amount });
+        }
+        return acc;
+      },
+      [] as { category: string; amount: number }[],
+    );
   }, [expenses]);
 
   const monthlyChartData = React.useMemo(() => {
-    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    
-    const dataByMonth = expenses.reduce((acc, expense) => {
-      const month = new Date(expense.date).toLocaleString('default', { month: 'short' });
-      if (!acc[month]) {
-        acc[month] = { month };
-      }
-      if (!acc[month][expense.category]) {
-        acc[month][expense.category] = 0;
-      }
-      acc[month][expense.category] += expense.amount;
-      return acc;
-    }, {} as Record<string, any>);
-
-    return Object.values(dataByMonth).sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+    const monthOrder = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    const dataByMonth = expenses.reduce(
+      (acc, expense) => {
+        const month = new Date(expense.date).toLocaleString('default', { month: 'short' });
+        if (!acc[month]) acc[month] = { month };
+        const prev = acc[month][expense.category];
+        acc[month][expense.category] = (typeof prev === 'number' ? prev : 0) + expense.amount;
+        return acc;
+      },
+      {} as Record<string, Record<string, number | string>>,
+    );
+    return Object.values(dataByMonth).sort(
+      (a, b) =>
+        monthOrder.indexOf(a.month as string) - monthOrder.indexOf(b.month as string),
+    );
   }, [expenses]);
 
-  
-  const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
+  /* Build stats array (shared by desktop + mobile) */
+  const stats = [
+    {
+      label: 'Total Spent',
+      value: inr(totalSpent),
+      sub: 'All entries',
+      tone: '',
+    },
+    {
+      label: 'You Owe',
+      value: summary.loading ? '—' : inr(summary.youOweTotal),
+      sub: `Across ${summary.activeGroupCount} group${summary.activeGroupCount === 1 ? '' : 's'}`,
+      tone: 'text-destructive',
+    },
+    {
+      label: 'You Are Owed',
+      value: summary.loading ? '—' : inr(summary.youAreOwedTotal),
+      sub: 'with open balances',
+      tone: 'text-primary',
+    },
+    {
+      label: 'Active Groups',
+      value: String(summary.activeGroupCount),
+      sub: 'with open balances',
+      tone: '',
+    },
+  ];
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">
-              {totalSpent.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">You Owe</CardTitle>
-            <ArrowDown className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline text-destructive">₹1,250.50</div>
-            <p className="text-xs text-muted-foreground">
-              Across 3 groups
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">You are Owed</CardTitle>
-            <ArrowUp className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline text-green-500">₹3,480.00</div>
-            <p className="text-xs text-muted-foreground">
-              Across 5 groups
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Groups</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">7</div>
-            <p className="text-xs text-muted-foreground">
-              +2 since last month
-            </p>
-          </CardContent>
-        </Card>
+      {/* Mobile layout */}
+      <div className="md:hidden">
+        <DashboardMobile
+          stats={stats}
+          expenses={expenses}
+          categoryChartData={categoryChartData}
+          summary={summary}
+        />
       </div>
 
-      <Card>
-        <Tabs defaultValue="category">
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <CardTitle>Spending Overview</CardTitle>
-                <CardDescription>
-                  View your expenses by category or over time.
-                </CardDescription>
+      {/* Desktop layout */}
+      <div className="hidden md:grid md:gap-6">
+        {/* 4-stat row */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat, i) => (
+            <Card
+              key={stat.label}
+              className="anim-rise relative overflow-hidden"
+              style={{ animationDelay: `${i * 90}ms` }}
+            >
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -top-2 right-2 select-none font-headline text-7xl font-light italic text-foreground/[0.06]"
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <CardHeader className="pb-2">
+                <CardTitle className="font-code text-[0.65rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  {stat.label}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={cn('tnum font-headline text-3xl font-semibold', stat.tone)}>
+                  {stat.value}
+                </div>
+                <p className="mt-3 border-t border-dashed pt-2 font-code text-xs text-muted-foreground">
+                  {stat.sub}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts card */}
+        <Card className="anim-rise" style={{ animationDelay: '360ms' }}>
+          <Tabs defaultValue="category">
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="font-headline text-2xl font-medium">
+                    Spending Overview
+                  </CardTitle>
+                  <CardDescription>
+                    View your expenses by category or over time.
+                  </CardDescription>
+                </div>
+                <TabsList>
+                  <TabsTrigger value="category">By Category</TabsTrigger>
+                  <TabsTrigger value="monthly">By Month</TabsTrigger>
+                </TabsList>
               </div>
-              <TabsList>
-                <TabsTrigger value="category">By Category</TabsTrigger>
-                <TabsTrigger value="monthly">By Month</TabsTrigger>
-              </TabsList>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <TabsContent value="category" className="m-0">
-              <ChartContainer config={categoryChartConfig} className="h-[300px] w-full">
-                <BarChart
-                  data={categoryChartData}
-                  accessibilityLayer
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="category"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                  />
-                  <YAxis
-                    tickFormatter={(value) => `₹${value}`}
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={10}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
-                  />
-                  <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </TabsContent>
-            <TabsContent value="monthly" className="m-0">
-              <ChartContainer config={monthlyChartConfig} className="h-[300px] w-full">
-                <BarChart
-                  data={monthlyChartData}
-                  accessibilityLayer
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={(value) => `₹${Number(value).toLocaleString()}`}
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={10}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" hideLabel />}
-                  />
-                  {Object.keys(monthlyChartConfig).map((key) => (
-                    <Bar
-                      key={key}
-                      dataKey={key}
-                      fill={`var(--color-${key})`}
-                      stackId="a"
+            </CardHeader>
+            <CardContent>
+              <TabsContent value="category" className="m-0">
+                <ChartContainer config={categoryChartConfig} className="h-[300px] w-full">
+                  <BarChart
+                    data={categoryChartData}
+                    accessibilityLayer
+                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="category"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      tickFormatter={(value) => value.slice(0, 3)}
                     />
-                  ))}
-                </BarChart>
-              </ChartContainer>
-            </TabsContent>
-          </CardContent>
-        </Tabs>
-      </Card>
+                    <YAxis
+                      tickFormatter={(value) => `₹${value}`}
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={10}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent indicator="dot" />}
+                    />
+                    <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
+                  </BarChart>
+                </ChartContainer>
+              </TabsContent>
+              <TabsContent value="monthly" className="m-0">
+                <ChartContainer config={monthlyChartConfig} className="h-[300px] w-full">
+                  <BarChart
+                    data={monthlyChartData}
+                    accessibilityLayer
+                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={(value) =>
+                        `₹${Number(value).toLocaleString('en-IN', { notation: 'compact' })}`
+                      }
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={10}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent indicator="dot" hideLabel />}
+                    />
+                    {Object.keys(monthlyChartConfig).map((key) => (
+                      <Bar
+                        key={key}
+                        dataKey={key}
+                        fill={`var(--color-${key})`}
+                        stackId="a"
+                      />
+                    ))}
+                  </BarChart>
+                </ChartContainer>
+              </TabsContent>
+            </CardContent>
+          </Tabs>
+        </Card>
+      </div>
     </div>
   );
 }
