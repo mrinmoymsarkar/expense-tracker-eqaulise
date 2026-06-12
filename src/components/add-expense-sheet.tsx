@@ -69,6 +69,13 @@ import {
 /* Props                                                                */
 /* ------------------------------------------------------------------ */
 
+interface QuickTemplate {
+  description: string;
+  amount: number;
+  category: string;
+  paymentMethod: string;
+}
+
 interface AddExpenseSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -77,6 +84,7 @@ interface AddExpenseSheetProps {
   initialValues?: Partial<ExpenseFormValues> & { id?: string };
   onSubmit: (values: ExpenseFormValues, editingId?: string) => Promise<void>;
   existingTags?: string[];
+  quickTemplates?: QuickTemplate[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -125,6 +133,7 @@ interface ExpenseFormBodyProps {
   onSubmit: (values: ExpenseFormValues, editingId?: string) => Promise<void>;
   open: boolean;
   existingTags?: string[];
+  quickTemplates?: QuickTemplate[];
 }
 
 function ExpenseFormBody({
@@ -137,6 +146,7 @@ function ExpenseFormBody({
   onSubmit,
   open,
   existingTags,
+  quickTemplates,
 }: ExpenseFormBodyProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -260,12 +270,8 @@ function ExpenseFormBody({
       if (!file) return;
       setIsScanning(true);
       try {
-        const dataUri = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        const { fileToCompressedDataUri } = await import('@/lib/image');
+        const dataUri = await fileToCompressedDataUri(file);
 
         let geminiOk = false;
         try {
@@ -287,35 +293,11 @@ function ExpenseFormBody({
         }
 
         if (!geminiOk) {
-          try {
-            const { scanReceiptLocal } = await import('@/lib/ocr/receipt-ocr');
-            const local = await scanReceiptLocal(dataUri);
-            if (local.amount !== null || local.description) {
-              const validCategory = categories.find((c) => c.value === local.category)?.value as Category | undefined;
-              setFormState((prev) => ({
-                ...prev,
-                ...(local.description ? { description: local.description } : {}),
-                ...(local.amount !== null ? { amount: String(local.amount) } : {}),
-                category: validCategory ?? prev.category,
-              }));
-              toast({
-                title: 'Scanned on device',
-                description: 'Used offline OCR — please double-check the values.',
-              });
-            } else {
-              toast({
-                variant: 'destructive',
-                title: 'Scan failed',
-                description: 'Could not extract data from the receipt',
-              });
-            }
-          } catch (localErr) {
-            toast({
-              variant: 'destructive',
-              title: 'Scan failed',
-              description: localErr instanceof Error ? localErr.message : 'Could not scan receipt',
-            });
-          }
+          toast({
+            variant: 'destructive',
+            title: 'Scan failed',
+            description: 'Could not read the receipt. Try a clearer photo or enter the amount manually.',
+          });
         }
       } finally {
         setIsScanning(false);
@@ -498,7 +480,6 @@ function ExpenseFormBody({
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="sr-only"
               tabIndex={-1}
               onChange={handleFileChange}
@@ -510,6 +491,42 @@ function ExpenseFormBody({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-4">
         <div className="space-y-5 pb-4">
+
+          {/* 0. Quick-add templates */}
+          {!isEditMode && quickTemplates && quickTemplates.length > 0 && (
+            <div className="space-y-2">
+              <span className="font-code text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
+                Quick add
+              </span>
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-none">
+                {quickTemplates.map((tpl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      const validCategory = categories.find((c) => c.value === tpl.category)?.value as Category | undefined;
+                      const validPaymentMethod = (['Card', 'UPI', 'Cash'] as PaymentMethod[]).includes(tpl.paymentMethod as PaymentMethod)
+                        ? (tpl.paymentMethod as PaymentMethod)
+                        : formState.paymentMethod;
+                      setFormState((prev) => ({
+                        ...prev,
+                        description: tpl.description,
+                        amount: String(tpl.amount),
+                        category: validCategory ?? prev.category,
+                        paymentMethod: validPaymentMethod,
+                      }));
+                    }}
+                    className="flex min-h-[44px] shrink-0 snap-start items-center rounded-md border border-border bg-card px-3 py-2 font-code text-xs text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <span className="max-w-[10rem] truncate">
+                      {tpl.description.length > 16 ? tpl.description.slice(0, 16) + '…' : tpl.description}
+                    </span>
+                    <span className="ml-1 shrink-0">· ₹{tpl.amount}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 1. Amount row */}
           <div className="space-y-1">
@@ -573,13 +590,18 @@ function ExpenseFormBody({
                     className={cn(
                       'flex min-h-[44px] shrink-0 snap-start flex-col items-center gap-1 rounded-md border px-3 py-2 font-code text-[0.6rem] uppercase tracking-wider transition-colors',
                       isSelected
-                        ? 'border-primary bg-primary text-primary-foreground'
+                        ? 'font-semibold'
                         : 'border-border bg-card text-muted-foreground hover:bg-muted',
                     )}
+                    style={
+                      isSelected
+                        ? { backgroundColor: cat.chartColor, borderColor: cat.chartColor, color: '#1c2a25' }
+                        : undefined
+                    }
                     aria-pressed={isSelected}
                     aria-label={cat.label}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4" style={isSelected ? undefined : { color: cat.chartColor }} />
                     <span>{cat.label.split(' ')[0]}</span>
                   </button>
                 );
@@ -880,16 +902,22 @@ export function AddExpenseSheet({
   initialValues,
   onSubmit,
   existingTags,
+  quickTemplates,
 }: AddExpenseSheetProps) {
   const isMobile = useIsMobile();
   const isEditMode = Boolean(initialValues?.id);
   const { vvHeight, keyboardOpen } = useVisualViewport();
+  const [mounted, setMounted] = React.useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (keyboardOpen) {
       window.scrollTo(0, 0);
     }
   }, [keyboardOpen]);
+
+  if (!mounted) return null;
 
   const bodyProps: ExpenseFormBodyProps = {
     isEditMode,
@@ -901,6 +929,7 @@ export function AddExpenseSheet({
     onSubmit,
     open,
     existingTags,
+    quickTemplates,
   };
 
   if (isMobile) {

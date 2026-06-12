@@ -50,6 +50,13 @@ const prompt = ai.definePrompt({
   Receipt Image: {{media url=receiptDataUri}}`,
 });
 
+// Each Gemini model has its own free-tier quota bucket, so when the default
+// model is rate-limited (429) another model usually still has quota.
+const fallbackModels = [
+  'googleai/gemini-2.5-flash-lite',
+  'googleai/gemini-2.5-flash',
+];
+
 const scanReceiptFlow = ai.defineFlow(
   {
     name: 'scanReceiptFlow',
@@ -57,7 +64,19 @@ const scanReceiptFlow = ai.defineFlow(
     outputSchema: ScanReceiptOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output!;
+    } catch (primaryError) {
+      for (const model of fallbackModels) {
+        try {
+          const {output} = await prompt(input, {model});
+          return output!;
+        } catch {
+          // try the next model
+        }
+      }
+      throw primaryError;
+    }
   }
 );

@@ -25,6 +25,7 @@ import { ThemeToggle } from './theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useData } from '@/components/providers/data-provider';
 import { useToast } from '@/hooks/use-toast';
+import RecurringManager from '@/components/recurring-manager';
 import type { Currency, DateFormat, Language } from '@/lib/types';
 
 /* ------------------------------------------------------------------ */
@@ -300,15 +301,19 @@ export default function Settings() {
   return (
     <div className="mx-auto max-w-2xl">
       <Tabs defaultValue="profile">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="recurring">Recurring</TabsTrigger>
         </TabsList>
         <TabsContent value="profile">
           <ProfileSettings />
         </TabsContent>
         <TabsContent value="preferences">
           <PreferencesSettings />
+        </TabsContent>
+        <TabsContent value="recurring">
+          <RecurringManager />
         </TabsContent>
       </Tabs>
     </div>

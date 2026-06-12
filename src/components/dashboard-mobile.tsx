@@ -11,12 +11,16 @@ import {
 } from '@/components/ui/card';
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Cell, Label, Pie, PieChart } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { categories, getCategory, getPaymentMethod } from '@/lib/data';
 import type { DisplayExpense } from '@/components/expense-list';
@@ -25,20 +29,13 @@ import type { DisplayExpense } from '@/components/expense-list';
 /* Chart config                                                         */
 /* ------------------------------------------------------------------ */
 
-const categoryColors = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-];
-
-const categoryChartConfig = {
-  amount: {
-    label: 'Amount',
-    color: 'hsl(var(--primary))',
-  },
-} satisfies ChartConfig;
+const categoriesChartConfig = categories.reduce((config, category) => {
+  config[category.value] = {
+    label: category.label,
+    color: category.chartColor,
+  };
+  return config;
+}, {} as ChartConfig);
 
 /* ------------------------------------------------------------------ */
 /* Summary type                                                        */
@@ -152,8 +149,17 @@ function RecentRow({ expense }: { expense: DisplayExpense }) {
 interface DashboardMobileProps {
   stats: { label: string; value: string; sub: string; tone?: string }[];
   expenses: DisplayExpense[];
-  categoryChartData: { category: string; amount: number }[];
+  categoryChartData: { category: string; amount: number; color: string }[];
   summary: Summary;
+  monthLabel: string;
+  onPrev: () => void;
+  onNext: () => void;
+  canGoNext: boolean;
+  isAllTime: boolean;
+  onToggleAllTime: () => void;
+  budgets: Record<string, number>;
+  spentByCategory: Record<string, number>;
+  onOpenBudgetEditor: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -165,11 +171,53 @@ export default function DashboardMobile({
   expenses,
   categoryChartData,
   summary,
+  monthLabel,
+  onPrev,
+  onNext,
+  canGoNext,
+  isAllTime,
+  onToggleAllTime,
+  budgets,
+  spentByCategory,
+  onOpenBudgetEditor,
 }: DashboardMobileProps) {
   const recentExpenses = expenses.slice(0, 5);
+  const categoryTotal = React.useMemo(
+    () => categoryChartData.reduce((sum, d) => sum + d.amount, 0),
+    [categoryChartData],
+  );
+
+  const budgetCategories = categories.filter((c) => budgets[c.value]);
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Month switcher */}
+      <div className="flex items-center justify-center gap-1 pt-1">
+        <button
+          type="button"
+          onClick={onPrev}
+          disabled={isAllTime}
+          className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted/60 disabled:opacity-30"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={onToggleAllTime}
+          className="font-code text-[0.65rem] uppercase tracking-[0.18em] text-foreground px-2 py-1 rounded-md hover:bg-muted/60 transition-colors min-w-[130px] text-center"
+        >
+          {monthLabel}
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={isAllTime || !canGoNext}
+          className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted/60 disabled:opacity-30"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
       {/* 2×2 stat grid */}
       <div className="grid grid-cols-2 gap-3">
         {stats.map((stat, i) => (
@@ -193,7 +241,7 @@ export default function DashboardMobile({
         <CardContent className="pt-1">
           {recentExpenses.length === 0 ? (
             <p className="font-code py-4 text-center text-xs text-muted-foreground">
-              No entries yet.
+              No entries for {monthLabel}.
             </p>
           ) : (
             <div>
@@ -215,40 +263,141 @@ export default function DashboardMobile({
         <CardHeader className="pb-1">
           <CardTitle className="font-headline text-lg font-medium">By Category</CardTitle>
           <CardDescription className="font-code text-[0.6rem] uppercase tracking-[0.15em]">
-            All-time spending
+            {monthLabel}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={categoryChartConfig} className="h-[220px] w-full">
-            <BarChart
-              data={categoryChartData}
-              accessibilityLayer
-              margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
+          {categoryChartData.length === 0 ? (
+            <div className="flex h-[200px] items-center justify-center">
+              <p className="font-code text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+                No expenses for {monthLabel}
+              </p>
+            </div>
+          ) : (
+            <ChartContainer config={categoriesChartConfig} className="mx-auto aspect-square h-[260px]">
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel nameKey="category" />}
+                />
+                <Pie
+                  data={categoryChartData}
+                  dataKey="amount"
+                  nameKey="category"
+                  innerRadius={55}
+                  outerRadius={82}
+                  paddingAngle={2}
+                  strokeWidth={0}
+                >
+                  {categoryChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                        return (
+                          <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground font-headline text-xl font-semibold tnum"
+                            >
+                              ₹{categoryTotal.toLocaleString('en-IN')}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 18}
+                              className="fill-muted-foreground font-code text-[0.55rem] uppercase tracking-[0.2em]"
+                            >
+                              total spent
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  />
+                </Pie>
+                <ChartLegend
+                  content={<ChartLegendContent nameKey="category" />}
+                  className="flex-wrap gap-x-3 gap-y-1"
+                />
+              </PieChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Budgets section */}
+      <Card className="anim-rise" style={{ animationDelay: '540ms' }}>
+        <CardHeader className="pb-1">
+          <div className="flex items-center justify-between">
+            <CardTitle className="font-headline text-lg font-medium">Budgets</CardTitle>
+            <button
+              type="button"
+              onClick={onOpenBudgetEditor}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60"
             >
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="category"
-                tickLine={false}
-                tickMargin={8}
-                axisLine={false}
-                tickFormatter={(value) => value.slice(0, 3)}
-                className="font-code text-[0.6rem]"
-              />
-              <YAxis
-                tickFormatter={(value) => `₹${Number(value).toLocaleString('en-IN', { notation: 'compact' })}`}
-                tickLine={false}
-                axisLine={false}
-                tickMargin={6}
-                width={48}
-                className="font-code text-[0.6rem]"
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent indicator="dot" />}
-              />
-              <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
-            </BarChart>
-          </ChartContainer>
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-1">
+          {budgetCategories.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-border py-6">
+              <p className="font-code text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground">
+                No budgets set
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-code text-[0.62rem] uppercase tracking-[0.15em]"
+                onClick={onOpenBudgetEditor}
+              >
+                Set monthly budgets
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {budgetCategories.map((cat) => {
+                const Icon = cat.icon;
+                const spent = spentByCategory[cat.value] ?? 0;
+                const budget = budgets[cat.value];
+                const pct = Math.min((spent / budget) * 100, 100);
+                const over = spent > budget;
+                return (
+                  <div key={cat.value} className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded ${cat.color}`}>
+                          <Icon className="h-2.5 w-2.5" />
+                        </div>
+                        <span className="font-code text-[0.6rem] uppercase tracking-[0.12em]">
+                          {cat.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={cn('tnum font-code text-[0.58rem]', over ? 'text-destructive' : 'text-muted-foreground')}>
+                          ₹{spent.toLocaleString('en-IN')} / ₹{budget.toLocaleString('en-IN')}
+                        </span>
+                        <span className={cn('tnum font-code text-[0.55rem] font-medium', over ? 'text-destructive' : 'text-muted-foreground')}>
+                          {Math.round((spent / budget) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: over ? 'hsl(var(--destructive))' : cat.chartColor,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

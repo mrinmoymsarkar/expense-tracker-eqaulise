@@ -135,6 +135,31 @@ const AppLayout = () => {
     return [...set].sort();
   }, [viewExpenses]);
 
+  const quickTemplates = React.useMemo(() => {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    const recent = viewExpenses.filter((e) => new Date(e.date).getTime() >= cutoff);
+    const groups: Record<string, { count: number; description: string; amount: number; category: string; paymentMethod: string; lastDate: number }> = {};
+    for (const e of recent) {
+      const key = e.description.trim().toLowerCase() + '|' + e.category;
+      const t = new Date(e.date).getTime();
+      if (!groups[key]) {
+        groups[key] = { count: 0, description: e.description, amount: e.amount, category: e.category, paymentMethod: e.paymentMethod, lastDate: t };
+      }
+      groups[key].count += 1;
+      if (t > groups[key].lastDate) {
+        groups[key].lastDate = t;
+        groups[key].description = e.description;
+        groups[key].amount = e.amount;
+        groups[key].paymentMethod = e.paymentMethod;
+      }
+    }
+    return Object.values(groups)
+      .filter((g) => g.count >= 2)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4)
+      .map(({ description, amount, category, paymentMethod }) => ({ description, amount, category, paymentMethod }));
+  }, [viewExpenses]);
+
   const handleAddExpense = async (values: ExpenseFormValues) => {
     if (values.groupId) {
       const { addGroupExpense } = await import('@/lib/db/expenses');
@@ -269,6 +294,7 @@ const AppLayout = () => {
         defaultGroupId={selectedGroup?.id ?? null}
         onSubmit={handleAddExpense}
         existingTags={existingTags}
+        quickTemplates={quickTemplates}
       />
     </div>
   );

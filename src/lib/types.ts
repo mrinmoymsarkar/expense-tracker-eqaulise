@@ -5,6 +5,19 @@ export type SplitMap = Record<string, number>;
 export type PaymentMethod = 'Card' | 'UPI' | 'Cash';
 export type Category = 'Food' | 'Shopping' | 'Transport' | 'Housing' | 'Entertainment' | 'Health' | 'Travel';
 
+export interface RecurringExpense {
+  id: string;
+  description: string;
+  amount: number;
+  category: Category;
+  paymentMethod: PaymentMethod;
+  dayOfMonth: number; // 1-28
+  notes?: string;
+  tags?: string[];
+  active: boolean;
+  lastApplied: string; // 'YYYY-MM' period most recently materialized
+}
+
 export interface PersonalExpense {
   id: string;
   description: string;
@@ -14,6 +27,7 @@ export interface PersonalExpense {
   paymentMethod: PaymentMethod;
   notes: string;
   tags?: string[];
+  recurringId?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string;
@@ -78,6 +92,8 @@ export interface UserProfile {
   dateFormat: DateFormat;
   language: Language;
   createdAt: Timestamp;
+  budgets?: Record<string, number>;
+  recurring?: RecurringExpense[];
 }
 
 export interface MemberBalance {

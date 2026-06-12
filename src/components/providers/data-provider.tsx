@@ -5,7 +5,9 @@ import { useGroups } from '@/hooks/use-groups';
 import { usePersonalExpenses } from '@/hooks/use-personal-expenses';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useDashboardSummary } from '@/hooks/use-dashboard-summary';
-import type { Group, PersonalExpense, UserProfile, ExpenseFormValues } from '@/lib/types';
+import { useRecurring, useRecurringCatchUp } from '@/hooks/use-recurring';
+import { useAuth } from '@/components/providers/auth-provider';
+import type { Group, PersonalExpense, UserProfile, ExpenseFormValues, RecurringExpense } from '@/lib/types';
 
 interface DataContextValue {
   groups: Group[];
@@ -21,11 +23,17 @@ interface DataContextValue {
   profileLoading: boolean;
   updateProfile: (data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>) => Promise<void>;
   summary: ReturnType<typeof useDashboardSummary>;
+  recurring: RecurringExpense[];
+  addRecurring: (item: Omit<RecurringExpense, 'id' | 'lastApplied' | 'active'>) => Promise<void>;
+  updateRecurring: (id: string, patch: Partial<Omit<RecurringExpense, 'id'>>) => Promise<void>;
+  removeRecurring: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+
   const {
     groups,
     loading: groupsLoading,
@@ -49,6 +57,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const summary = useDashboardSummary(groups);
 
+  const { recurring, addRecurring, updateRecurring, removeRecurring } = useRecurring(
+    profile,
+    updateProfile,
+  );
+
+  useRecurringCatchUp(profile, user?.uid ?? null);
+
   return (
     <DataContext.Provider
       value={{
@@ -65,6 +80,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         profileLoading,
         updateProfile,
         summary,
+        recurring,
+        addRecurring,
+        updateRecurring,
+        removeRecurring,
       }}
     >
       {children}

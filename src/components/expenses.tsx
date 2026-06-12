@@ -16,7 +16,8 @@ import { getCategory, getPaymentMethod } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn, exportToCsv } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { exportExpensesCsv } from '@/lib/csv';
 import { format } from 'date-fns';
 import { useData } from '@/components/providers/data-provider';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -160,17 +161,11 @@ export default function Expenses({
   /* ---------------------------------------------------------------- */
 
   const handleExport = () => {
-    const dataToExport = visibleExpenses.map((expense) => ({
-      ID: expense.id,
-      Description: expense.description,
-      Amount: expense.amount.toFixed(2),
-      Category: expense.category,
-      Date: format(new Date(expense.date), 'yyyy-MM-dd HH:mm'),
-      Group: expense.group || 'N/A',
-      'Payment Method': expense.paymentMethod,
-      Notes: expense.notes || '',
-    }));
-    exportToCsv('expenses.csv', dataToExport);
+    if (visibleExpenses.length === 0) {
+      toast({ title: 'Nothing to export', description: 'No expenses match the current view.' });
+      return;
+    }
+    exportExpensesCsv(visibleExpenses);
   };
 
   /* ---------------------------------------------------------------- */
@@ -188,10 +183,12 @@ export default function Expenses({
             variant="outline"
             size="sm"
             onClick={handleExport}
-            className="font-code text-xs uppercase tracking-wider"
+            disabled={visibleExpenses.length === 0}
+            aria-label="Export expenses as CSV"
+            className="font-code text-xs uppercase tracking-wider min-h-[44px] md:min-h-0"
           >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
+            <Download className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Export CSV</span>
           </Button>
         </CardHeader>
         <CardContent>

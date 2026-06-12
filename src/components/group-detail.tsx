@@ -7,6 +7,7 @@ import {
   Check,
   Copy,
   IndianRupee,
+  MessageCircle,
   Scale,
   Users,
 } from "lucide-react";
@@ -290,6 +291,29 @@ export default function GroupDetail({
                           onClick={() => openSettleFor(s)}
                         >
                           Settle
+                        </Button>
+                      )}
+                      {s.toUid === uid && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ml-1 h-7 px-2 font-code text-[0.6rem] uppercase tracking-[0.1em]"
+                          onClick={() => {
+                            const me = group.members[uid];
+                            const them = group.members[s.fromUid];
+                            const amountStr = s.amount.toLocaleString("en-IN");
+                            const msg =
+                              `Hi ${them?.displayName?.split(" ")[0] ?? "there"}! Gentle reminder from Equalize: ₹${amountStr} pending for "${group.name}".` +
+                              (me?.upiId ? ` You can pay me via UPI: ${me.upiId}` : "");
+                            window.open(
+                              `https://wa.me/?text=${encodeURIComponent(msg)}`,
+                              "_blank",
+                              "noopener"
+                            );
+                          }}
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                          <span className="ml-1">Remind</span>
                         </Button>
                       )}
                     </div>
