@@ -15,6 +15,7 @@ import {
   Loader2,
   ChevronDown,
   Sparkles,
+  X,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ import { processReceipt, getSplitSuggestion } from '@/app/actions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLastPaymentMethod } from '@/hooks/use-last-payment-method';
 import { useSwipeDown } from '@/hooks/use-swipe-down';
+import { useVisualViewport } from '@/hooks/use-visual-viewport';
 import { useAuth } from '@/components/providers/auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { SplitEditor } from '@/components/split-editor';
@@ -74,6 +76,7 @@ interface AddExpenseSheetProps {
   defaultGroupId?: string | null;
   initialValues?: Partial<ExpenseFormValues> & { id?: string };
   onSubmit: (values: ExpenseFormValues, editingId?: string) => Promise<void>;
+  existingTags?: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -88,6 +91,7 @@ type FormShape = {
   date: Date;
   timeStr: string;
   notes: string;
+  tags: string[];
   groupId: string; // 'personal' | actual group id
   splitMethod: SplitMethod;
   splits: SplitMap;
@@ -120,6 +124,7 @@ interface ExpenseFormBodyProps {
   onClose: () => void;
   onSubmit: (values: ExpenseFormValues, editingId?: string) => Promise<void>;
   open: boolean;
+  existingTags?: string[];
 }
 
 function ExpenseFormBody({
@@ -131,6 +136,7 @@ function ExpenseFormBody({
   onClose,
   onSubmit,
   open,
+  existingTags,
 }: ExpenseFormBodyProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -151,6 +157,19 @@ function ExpenseFormBody({
   const [suggestedMethodName, setSuggestedMethodName] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const [tagInputValue, setTagInputValue] = useState('');
+
+  useEffect(() => {
+    if (open && !isEditMode) {
+      const t = setTimeout(() => amountRef.current?.focus({ preventScroll: true }), 300);
+      return () => clearTimeout(t);
+    }
+  }, [open, isEditMode]);
+
+  const handleInputFocus = (e: React.FocusEvent<HTMLElement>) => {
+    setTimeout(() => (e.target as HTMLElement).scrollIntoView({ block: 'center', behavior: 'smooth' }), 250);
+  };
 
   /* Default values -------------------------------------------------- */
   function buildDefaults(): FormShape {
@@ -164,6 +183,7 @@ function ExpenseFormBody({
         date: initialValues.date ?? now,
         timeStr: toTimeStr(initialValues.date ?? now),
         notes: initialValues.notes ?? '',
+        tags: initialValues.tags ?? [],
         groupId: initialValues.groupId ?? 'personal',
         splitMethod: initialValues.splitMethod ?? 'equal',
         splits: initialValues.splits ?? {},
@@ -178,6 +198,7 @@ function ExpenseFormBody({
       date: now,
       timeStr: toTimeStr(now),
       notes: '',
+      tags: [],
       groupId: defaultGroupId ?? 'personal',
       splitMethod: 'equal',
       splits: {},
@@ -198,6 +219,7 @@ function ExpenseFormBody({
       setPaidBy(defaults.paidBy || user?.uid || '');
       setSuggestReasoning(null);
       setSuggestedMethodName(null);
+      setTagInputValue('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -244,28 +266,59 @@ function ExpenseFormBody({
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
-        const result = await processReceipt({ receiptDataUri: dataUri });
-        if (result.error) throw new Error(result.error);
-        if (result.data) {
-          const { description, amount, category } = result.data;
-          const validCategory = categories.find((c) => c.value === category)?.value as Category | undefined;
-          setFormState((prev) => ({
-            ...prev,
-            description: description ?? prev.description,
-            amount: amount != null ? String(amount) : prev.amount,
-            category: validCategory ?? prev.category,
-          }));
-          toast({ title: 'Receipt scanned', description: description });
+
+        let geminiOk = false;
+        try {
+          const result = await processReceipt({ receiptDataUri: dataUri });
+          if (!result.error && result.data) {
+            const { description, amount, category } = result.data;
+            const validCategory = categories.find((c) => c.value === category)?.value as Category | undefined;
+            setFormState((prev) => ({
+              ...prev,
+              description: description ?? prev.description,
+              amount: amount != null ? String(amount) : prev.amount,
+              category: validCategory ?? prev.category,
+            }));
+            toast({ title: 'Receipt scanned', description: description });
+            geminiOk = true;
+          }
+        } catch {
+          // fall through to local OCR
         }
-      } catch (err) {
-        toast({
-          variant: 'destructive',
-          title: 'Scan failed',
-          description: err instanceof Error ? err.message : 'Could not scan receipt',
-        });
+
+        if (!geminiOk) {
+          try {
+            const { scanReceiptLocal } = await import('@/lib/ocr/receipt-ocr');
+            const local = await scanReceiptLocal(dataUri);
+            if (local.amount !== null || local.description) {
+              const validCategory = categories.find((c) => c.value === local.category)?.value as Category | undefined;
+              setFormState((prev) => ({
+                ...prev,
+                ...(local.description ? { description: local.description } : {}),
+                ...(local.amount !== null ? { amount: String(local.amount) } : {}),
+                category: validCategory ?? prev.category,
+              }));
+              toast({
+                title: 'Scanned on device',
+                description: 'Used offline OCR — please double-check the values.',
+              });
+            } else {
+              toast({
+                variant: 'destructive',
+                title: 'Scan failed',
+                description: 'Could not extract data from the receipt',
+              });
+            }
+          } catch (localErr) {
+            toast({
+              variant: 'destructive',
+              title: 'Scan failed',
+              description: localErr instanceof Error ? localErr.message : 'Could not scan receipt',
+            });
+          }
+        }
       } finally {
         setIsScanning(false);
-        // reset so same file can be chosen again
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
@@ -298,6 +351,34 @@ function ExpenseFormBody({
       }
     });
   }, [formState.description, groupMembers.length, amountNum, memberUids, toast]);
+
+  /* Tag helpers ----------------------------------------------------- */
+  const normalizeTag = (raw: string): string =>
+    raw.trim().toLowerCase().replace(/^#+/, '').replace(/\s+/g, '-');
+
+  const addTagFromInput = useCallback((raw: string) => {
+    const parts = raw.split(',').map(normalizeTag).filter(Boolean);
+    if (parts.length === 0) return;
+    setFormState((prev) => {
+      const next = [...prev.tags];
+      for (const t of parts) {
+        if (t && !next.includes(t)) next.push(t);
+      }
+      return { ...prev, tags: next };
+    });
+    setTagInputValue('');
+  }, []);
+
+  const removeTag = useCallback((tag: string) => {
+    setFormState((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== tag) }));
+  }, []);
+
+  const addTagDirect = useCallback((tag: string) => {
+    setFormState((prev) => {
+      if (prev.tags.includes(tag)) return prev;
+      return { ...prev, tags: [...prev.tags, tag] };
+    });
+  }, []);
 
   /* Submit ---------------------------------------------------------- */
   const handleSubmit = useCallback(async () => {
@@ -335,6 +416,7 @@ function ExpenseFormBody({
       paymentMethod: formState.paymentMethod,
       date: finalDate,
       notes: formState.notes,
+      tags: formState.tags,
       groupId: formState.groupId === 'personal' ? null : formState.groupId,
       splitMethod: splitValue.method,
       splits: finalSplits,
@@ -390,7 +472,7 @@ function ExpenseFormBody({
         {isMobile && (
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" aria-hidden="true" />
         )}
-        <div className="flex items-center justify-between">
+        <div className={`flex items-center justify-between ${!isMobile ? 'pr-8' : ''}`}>
           <span className="font-code text-xs uppercase tracking-[0.25em] text-muted-foreground">
             {isEditMode ? 'Edit entry' : 'New entry'}
           </span>
@@ -434,14 +516,15 @@ function ExpenseFormBody({
             <div className="flex items-baseline gap-1 border-b border-dashed border-border pb-2">
               <span className="font-headline text-3xl text-muted-foreground">₹</span>
               <input
+                ref={amountRef}
                 type="number"
                 inputMode="decimal"
                 placeholder="0"
-                autoFocus={!isEditMode}
                 value={formState.amount}
                 onChange={(e) =>
                   setFormState((prev) => ({ ...prev, amount: e.target.value }))
                 }
+                onFocus={handleInputFocus}
                 className="w-full bg-transparent border-none outline-none focus-visible:ring-0 font-headline text-5xl font-semibold tnum"
                 aria-label="Amount"
               />
@@ -460,6 +543,7 @@ function ExpenseFormBody({
               onChange={(e) =>
                 setFormState((prev) => ({ ...prev, description: e.target.value }))
               }
+              onFocus={handleInputFocus}
               aria-label="Description"
             />
             {errors.description && (
@@ -637,7 +721,76 @@ function ExpenseFormBody({
                   onChange={(e) =>
                     setFormState((prev) => ({ ...prev, notes: e.target.value }))
                   }
+                  onFocus={handleInputFocus}
                 />
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <span className="font-code text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
+                  Tags
+                </span>
+                {formState.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {formState.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 rounded-sm border border-dashed border-border px-2 py-0.5 font-code text-xs text-foreground"
+                      >
+                        #{tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="flex h-4 w-4 min-w-[24px] items-center justify-center text-muted-foreground hover:text-foreground"
+                          aria-label={`Remove tag ${tag}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Input
+                  placeholder="office, goa-trip…"
+                  enterKeyHint="done"
+                  value={tagInputValue}
+                  onFocus={handleInputFocus}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v.endsWith(',')) {
+                      addTagFromInput(v);
+                    } else {
+                      setTagInputValue(v);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTagFromInput(tagInputValue);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (tagInputValue.trim()) addTagFromInput(tagInputValue);
+                  }}
+                  className="h-10"
+                />
+                {existingTags && existingTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {existingTags
+                      .filter((t) => !formState.tags.includes(t))
+                      .slice(0, 8)
+                      .map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => addTagDirect(tag)}
+                          className="inline-flex items-center rounded-sm border border-dashed border-border/60 px-2 py-0.5 font-code text-xs text-muted-foreground hover:border-border hover:text-foreground transition-colors"
+                        >
+                          #{tag}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -726,9 +879,17 @@ export function AddExpenseSheet({
   defaultGroupId,
   initialValues,
   onSubmit,
+  existingTags,
 }: AddExpenseSheetProps) {
   const isMobile = useIsMobile();
   const isEditMode = Boolean(initialValues?.id);
+  const { vvHeight, keyboardOpen } = useVisualViewport();
+
+  useEffect(() => {
+    if (keyboardOpen) {
+      window.scrollTo(0, 0);
+    }
+  }, [keyboardOpen]);
 
   const bodyProps: ExpenseFormBodyProps = {
     isEditMode,
@@ -739,6 +900,7 @@ export function AddExpenseSheet({
     onClose: () => onOpenChange(false),
     onSubmit,
     open,
+    existingTags,
   };
 
   if (isMobile) {
@@ -747,6 +909,7 @@ export function AddExpenseSheet({
         <SheetContent
           side="bottom"
           className="h-[92svh] rounded-t-lg border-t p-0 flex flex-col"
+          style={keyboardOpen && vvHeight ? { height: vvHeight, maxHeight: vvHeight } : undefined}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{isEditMode ? 'Edit expense' : 'Add expense'}</SheetTitle>
@@ -759,7 +922,7 @@ export function AddExpenseSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 flex flex-col">
+      <DialogContent className="sm:max-w-lg h-[90vh] p-0 flex flex-col overflow-hidden">
         <DialogTitle className="sr-only">
           {isEditMode ? 'Edit expense' : 'Add expense'}
         </DialogTitle>

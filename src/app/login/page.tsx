@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { EqualizeLogo } from '@/components/icons';
+import { Eye, EyeOff } from 'lucide-react';
 
 const GoogleIcon = () => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="size-4">
@@ -24,6 +25,9 @@ const sampleLedger = [
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
@@ -41,17 +45,43 @@ export default function LoginPage() {
       return;
     }
 
+    if (isSignUp && password !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Passwords Do Not Match',
+        description: 'Please make sure both passwords are the same.',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const { auth } = await import('@/lib/firebase');
-      const { createUserWithEmailAndPassword, signInWithEmailAndPassword } = await import('firebase/auth');
+      const { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } = await import('firebase/auth');
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        sendEmailVerification(credential.user).catch(() => {});
+        await auth.signOut();
+        handleSwitchMode(false);
+        toast({
+          title: 'Verify your email',
+          description: `A verification link has been sent to ${email}. Click it, then sign in.`,
+        });
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const credential = await signInWithEmailAndPassword(auth, email, password);
+        if (!credential.user.emailVerified) {
+          sendEmailVerification(credential.user).catch(() => {});
+          await auth.signOut();
+          toast({
+            variant: 'destructive',
+            title: 'Email Not Verified',
+            description: `Please verify your email first. We've re-sent the link to ${email}.`,
+          });
+          return;
+        }
+        router.push('/');
       }
-      router.push('/');
     } catch (error: any) {
       const title = isSignUp ? 'Sign Up Failed' : 'Sign In Failed';
       let description = "An unexpected error occurred. Please try again.";
@@ -78,6 +108,37 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Email Required',
+        description: 'Enter your email above first, then tap "Forgot password?".',
+      });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { auth } = await import('@/lib/firebase');
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Reset Link Sent',
+        description: `Check ${email} for a password reset link. It may take a minute to arrive.`,
+      });
+    } catch (error: any) {
+      let description = error.message;
+      if (error.code === 'auth/invalid-email') {
+        description = 'The email address is not valid. Please enter a valid email.';
+      } else if (error.code === 'auth/user-not-found') {
+        description = 'No account found with this email.';
+      }
+      toast({ variant: 'destructive', title: 'Reset Failed', description });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
@@ -97,6 +158,13 @@ export default function LoginPage() {
     }
   };
 
+  const handleSwitchMode = (signUp: boolean) => {
+    setIsSignUp(signUp);
+    setPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
@@ -188,21 +256,80 @@ export default function LoginPage() {
                 className="h-11 bg-card"
               />
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="password" className="font-code text-xs uppercase tracking-[0.15em] text-muted-foreground">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                placeholder="••••••••"
-                className="h-11 bg-card"
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="font-code text-xs uppercase tracking-[0.15em] text-muted-foreground">
+                  Password
+                </Label>
+                {!isSignUp && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 text-xs font-normal text-muted-foreground"
+                    onClick={handleForgotPassword}
+                    disabled={isLoading}
+                  >
+                    Forgot password?
+                  </Button>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  placeholder="••••••••"
+                  className="h-11 bg-card pr-11"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+                </Button>
+              </div>
             </div>
+
+            {isSignUp && (
+              <div className="grid gap-2">
+                <Label htmlFor="confirmPassword" className="font-code text-xs uppercase tracking-[0.15em] text-muted-foreground">
+                  Confirm Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading}
+                    placeholder="••••••••"
+                    className="h-11 bg-card pr-11"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    <span className="sr-only">{showConfirmPassword ? 'Hide password' : 'Show password'}</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Button type="submit" disabled={isLoading} className="h-11 w-full text-base">
               {isLoading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
             </Button>
@@ -228,14 +355,14 @@ export default function LoginPage() {
             {isSignUp ? (
               <>
                 Already have an account?{' '}
-                <Button variant="link" className="h-auto p-0 font-semibold" onClick={() => setIsSignUp(false)} disabled={isLoading}>
+                <Button variant="link" className="h-auto p-0 font-semibold" onClick={() => handleSwitchMode(false)} disabled={isLoading}>
                   Sign In
                 </Button>
               </>
             ) : (
               <>
                 Don&apos;t have an account?{' '}
-                <Button variant="link" className="h-auto p-0 font-semibold" onClick={() => setIsSignUp(true)} disabled={isLoading}>
+                <Button variant="link" className="h-auto p-0 font-semibold" onClick={() => handleSwitchMode(true)} disabled={isLoading}>
                   Sign Up
                 </Button>
               </>

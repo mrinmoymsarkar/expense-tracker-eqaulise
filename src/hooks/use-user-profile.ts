@@ -51,6 +51,17 @@ export function useUserProfile(): {
     const db = getDb();
     await setDoc(doc(db, 'users', user.uid), data, { merge: true });
 
+    if (data.displayName !== undefined || data.photoURL !== undefined) {
+      const { auth } = await import('@/lib/firebase');
+      const { updateProfile: updateAuthProfile } = await import('firebase/auth');
+      if (auth.currentUser) {
+        await updateAuthProfile(auth.currentUser, {
+          ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
+          ...(data.photoURL !== undefined ? { photoURL: data.photoURL } : {}),
+        });
+      }
+    }
+
     // Denormalize member info into all groups this user belongs to (best-effort)
     const groupsRef = collection(db, 'groups');
     const q = query(groupsRef, where('memberUids', 'array-contains', user.uid));

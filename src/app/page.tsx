@@ -81,6 +81,7 @@ const AppLayout = () => {
     createGroup,
     joinGroupByCode,
     summary,
+    profile,
   } = useData();
 
   const handleLogout = async () => {
@@ -104,6 +105,7 @@ const AppLayout = () => {
       groupId: null as string | null,
       paymentMethod: e.paymentMethod,
       notes: e.notes,
+      tags: e.tags ?? [],
     }));
     const fromGroups = summary.allGroupExpenses.map((e) => ({
       id: e.id,
@@ -115,6 +117,7 @@ const AppLayout = () => {
       groupId: e.groupId as string | null,
       paymentMethod: e.paymentMethod,
       notes: e.notes,
+      tags: e.tags ?? [],
       paidBy: e.paidBy,
       splitMethod: e.splitMethod,
       splits: e.splits,
@@ -123,6 +126,14 @@ const AppLayout = () => {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   }, [personalExpenses, summary.allGroupExpenses]);
+
+  const existingTags = React.useMemo(() => {
+    const set = new Set<string>();
+    for (const e of viewExpenses) {
+      for (const t of (e.tags ?? [])) set.add(t);
+    }
+    return [...set].sort();
+  }, [viewExpenses]);
 
   const handleAddExpense = async (values: ExpenseFormValues) => {
     if (values.groupId) {
@@ -197,11 +208,11 @@ const AppLayout = () => {
             <SidebarMenuItem>
                <div className="flex items-center gap-2 p-2 transition-colors rounded-md">
                   <Avatar className="h-8 w-8 transition-all">
-                    <AvatarImage src={user?.photoURL || "https://placehold.co/40x40.png"} alt={user?.displayName || "User"} data-ai-hint="profile picture" />
-                    <AvatarFallback>{user?.displayName ? user.displayName.slice(0, 2).toUpperCase() : user?.email?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={profile?.photoURL || user?.photoURL || "https://placehold.co/40x40.png"} alt={profile?.displayName || user?.displayName || "User"} data-ai-hint="profile picture" />
+                    <AvatarFallback>{(profile?.displayName || user?.displayName) ? (profile?.displayName || user?.displayName)!.slice(0, 2).toUpperCase() : user?.email?.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">{user?.displayName || user?.email}</span>
+                    <span className="text-sm font-medium">{profile?.displayName || user?.displayName || user?.email}</span>
                     <span className="text-xs text-muted-foreground">
                       {user?.email}
                     </span>
@@ -257,6 +268,7 @@ const AppLayout = () => {
         groups={groups}
         defaultGroupId={selectedGroup?.id ?? null}
         onSubmit={handleAddExpense}
+        existingTags={existingTags}
       />
     </div>
   );
@@ -266,15 +278,28 @@ export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const isUnverifiedEmailUser =
+    !!user &&
+    user.providerData.some((p) => p.providerId === 'password') &&
+    !user.emailVerified;
+
   React.useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
-    // AuthProvider shows a loading spinner, so we can return null here
-    // to prevent flashing the login page while the user is being authenticated.
+  React.useEffect(() => {
+    if (!loading && isUnverifiedEmailUser) {
+      (async () => {
+        const { auth } = await import('@/lib/firebase');
+        await auth.signOut();
+        router.push('/login');
+      })();
+    }
+  }, [loading, isUnverifiedEmailUser, router]);
+
+  if (loading || !user || isUnverifiedEmailUser) {
     return null;
   }
 

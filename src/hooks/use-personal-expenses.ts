@@ -58,6 +58,7 @@ export function usePersonalExpenses(): {
       date: Timestamp.fromDate(v.date),
       paymentMethod: v.paymentMethod,
       notes: v.notes ?? '',
+      tags: v.tags ?? [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: user.uid,
@@ -75,6 +76,7 @@ export function usePersonalExpenses(): {
       date: Timestamp.fromDate(v.date),
       paymentMethod: v.paymentMethod,
       notes: v.notes ?? '',
+      tags: v.tags ?? [],
       updatedAt: serverTimestamp(),
     });
   };

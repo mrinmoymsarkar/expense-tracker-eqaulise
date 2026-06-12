@@ -52,8 +52,8 @@ function ProfileSettings() {
     try {
       await updateProfile({ displayName, upiId });
       toast({ title: 'Profile saved' });
-    } catch {
-      toast({ variant: 'destructive', title: 'Save failed', description: 'Could not update your profile.' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Save failed', description: e?.message ?? 'Could not update your profile.' });
     } finally {
       setSaving(false);
     }
@@ -195,8 +195,8 @@ function PreferencesSettings() {
     try {
       await updateProfile({ currency, dateFormat, language });
       toast({ title: 'Preferences saved' });
-    } catch {
-      toast({ variant: 'destructive', title: 'Save failed', description: 'Could not update preferences.' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Save failed', description: e?.message ?? 'Could not update preferences.' });
     } finally {
       setSaving(false);
     }

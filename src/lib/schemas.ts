@@ -7,6 +7,7 @@ export const expenseFormSchema = z.object({
   paymentMethod: z.enum(['Card', 'UPI', 'Cash']),
   date: z.date(),
   notes: z.string().optional().default(''),
+  tags: z.array(z.string()).optional().default([]),
   groupId: z.string().nullable().optional(),
   splitMethod: z.enum(['equal', 'exact', 'percentage']).optional().default('equal'),
   splits: z.record(z.number()).optional().default({}),

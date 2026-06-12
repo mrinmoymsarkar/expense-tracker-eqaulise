@@ -13,6 +13,7 @@ export interface PersonalExpense {
   date: Timestamp;
   paymentMethod: PaymentMethod;
   notes: string;
+  tags?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string;
@@ -98,6 +99,7 @@ export interface ExpenseFormValues {
   paymentMethod: PaymentMethod;
   date: Date;
   notes: string;
+  tags?: string[];
   groupId: string | null;
   splitMethod: SplitMethod;
   splits: SplitMap;

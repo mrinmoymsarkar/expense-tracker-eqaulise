@@ -296,6 +296,7 @@ export default function Expenses({
             paymentMethod: editingExpense.paymentMethod as ExpenseFormValues['paymentMethod'],
             date: new Date(editingExpense.date),
             notes: editingExpense.notes,
+            tags: editingExpense.tags ?? [],
             groupId: editingExpense.groupId,
             splitMethod: editingExpense.splitMethod ?? 'equal',
             splits: editingExpense.splits ?? {},

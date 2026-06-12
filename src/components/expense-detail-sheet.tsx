@@ -124,6 +124,21 @@ function DetailContent({
           </DetailRow>
         )}
 
+        {expense.tags && expense.tags.length > 0 && (
+          <DetailRow label="Tags">
+            <div className="flex flex-wrap justify-end gap-1">
+              {expense.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center rounded-sm border border-dashed border-border px-1.5 py-0.5 font-code text-[0.6rem] text-muted-foreground"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </DetailRow>
+        )}
+
         {splitCount > 0 && expense.splitMethod && (
           <DetailRow label="Split">
             <span className="font-code text-xs uppercase tracking-[0.1em]">

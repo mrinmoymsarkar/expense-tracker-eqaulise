@@ -22,6 +22,7 @@ export interface DisplayExpense {
   groupId: string | null; // null = personal expense
   paymentMethod: string;
   notes: string;
+  tags?: string[];
   paidBy?: string;
   splitMethod?: 'equal' | 'exact' | 'percentage';
   splits?: Record<string, number>;
@@ -112,6 +113,23 @@ function ExpenseRow({
                 <span>{paymentMethod.label}</span>
               </>
             )}
+            {expense.tags && expense.tags.length > 0 && (
+              <>
+                {expense.tags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag}
+                    className="font-code text-[0.6rem] text-muted-foreground/70"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+                {expense.tags.length > 2 && (
+                  <span className="font-code text-[0.6rem] text-muted-foreground/70">
+                    +{expense.tags.length - 2}
+                  </span>
+                )}
+              </>
+            )}
           </p>
         </div>
 
@@ -156,6 +174,7 @@ export function ExpenseList({
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   /* Filtered list */
   const filtered = useMemo(() => {
@@ -165,12 +184,14 @@ export function ExpenseList({
         !q ||
         e.description.toLowerCase().includes(q) ||
         e.notes.toLowerCase().includes(q) ||
-        e.group.toLowerCase().includes(q);
+        e.group.toLowerCase().includes(q) ||
+        (e.tags ?? []).some((t) => t.toLowerCase().includes(q));
       const matchesCategory = !activeCategory || e.category === activeCategory;
       const matchesGroup = !activeGroup || e.group === activeGroup;
-      return matchesSearch && matchesCategory && matchesGroup;
+      const matchesTag = !activeTag || (e.tags ?? []).includes(activeTag);
+      return matchesSearch && matchesCategory && matchesGroup && matchesTag;
     });
-  }, [expenses, search, activeCategory, activeGroup]);
+  }, [expenses, search, activeCategory, activeGroup, activeTag]);
 
   /* Day-grouped list */
   const grouped = useMemo(() => {
@@ -193,6 +214,15 @@ export function ExpenseList({
     () => (groups ? groups.map((g) => g.name) : [...new Set(expenses.map((e) => e.group).filter(Boolean))]),
     [groups, expenses],
   );
+
+  /* Unique tags for filter chips */
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of expenses) {
+      for (const t of (e.tags ?? [])) set.add(t);
+    }
+    return [...set].sort();
+  }, [expenses]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -223,10 +253,10 @@ export function ExpenseList({
       <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
         {/* All chip */}
         <button
-          onClick={() => { setActiveCategory(null); setActiveGroup(null); }}
+          onClick={() => { setActiveCategory(null); setActiveGroup(null); setActiveTag(null); }}
           className={cn(
             'flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 font-code text-[0.6rem] uppercase tracking-[0.15em] transition-colors',
-            !activeCategory && !activeGroup
+            !activeCategory && !activeGroup && !activeTag
               ? 'bg-primary text-primary-foreground border-primary'
               : 'border-border bg-card text-muted-foreground hover:bg-muted',
           )}
@@ -271,6 +301,25 @@ export function ExpenseList({
             >
               <Users className="h-3 w-3" />
               {name}
+            </button>
+          );
+        })}
+
+        {/* Tag chips */}
+        {allTags.map((tag) => {
+          const isActive = activeTag === tag;
+          return (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(isActive ? null : tag)}
+              className={cn(
+                'flex h-7 shrink-0 snap-start items-center rounded-full border border-dashed px-3 font-code text-[0.6rem] tracking-[0.15em] transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground border-primary border-solid'
+                  : 'border-border bg-card text-muted-foreground hover:bg-muted',
+              )}
+            >
+              #{tag}
             </button>
           );
         })}
