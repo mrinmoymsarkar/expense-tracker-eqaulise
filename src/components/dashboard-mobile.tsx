@@ -17,13 +17,13 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { categoryBadge, getPaymentMethod } from '@/lib/data';
+import { categoryBadge } from '@/lib/data';
 import { useCategories } from '@/hooks/use-categories';
 import type { DisplayExpense } from '@/components/expense-list';
 
@@ -49,6 +49,7 @@ function StatCard({
   tone,
   index,
   loading,
+  deltaChip,
 }: {
   label: string;
   value: string;
@@ -56,6 +57,7 @@ function StatCard({
   tone?: string;
   index: number;
   loading?: boolean;
+  deltaChip?: React.ReactNode;
 }) {
   return (
     <Card
@@ -83,6 +85,7 @@ function StatCard({
         )}
         <p className="mt-2 border-t border-dashed pt-1.5 font-code text-[0.6rem] text-muted-foreground">
           {sub}
+          {deltaChip}
         </p>
       </CardContent>
     </Card>
@@ -154,11 +157,25 @@ interface DashboardMobileProps {
   budgets: Record<string, number>;
   spentByCategory: Record<string, number>;
   onOpenBudgetEditor: () => void;
+  dailyChartData: { day: number; label: string; amount: number }[];
+  paymentChartData: { method: string; amount: number; fill: string }[];
+  spendDelta: { thisTotal: number; lastTotal: number; pct: number | null };
+  topMerchants: { description: string; amount: number }[];
+  budgetPace: number;
 }
 
 /* ------------------------------------------------------------------ */
 /* DashboardMobile                                                     */
 /* ------------------------------------------------------------------ */
+
+function inrMobile(amount: number): string {
+  return amount.toLocaleString('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
 
 export default function DashboardMobile({
   stats,
@@ -175,6 +192,11 @@ export default function DashboardMobile({
   budgets,
   spentByCategory,
   onOpenBudgetEditor,
+  dailyChartData,
+  paymentChartData,
+  spendDelta,
+  topMerchants,
+  budgetPace,
 }: DashboardMobileProps) {
   const { categories } = useCategories();
   const categoriesChartConfig = React.useMemo(
@@ -193,6 +215,20 @@ export default function DashboardMobile({
   );
 
   const budgetCategories = categories.filter((c) => budgets[c.value]);
+
+  const dailyChartConfig: ChartConfig = {
+    amount: { label: 'Spent', color: 'hsl(var(--primary))' },
+  };
+
+  const paymentChartConfig: ChartConfig = React.useMemo(() => {
+    const cfg: ChartConfig = {};
+    paymentChartData.forEach((p) => {
+      cfg[p.method] = { label: p.method, color: p.fill };
+    });
+    return cfg;
+  }, [paymentChartData]);
+
+  const paymentTotal = paymentChartData.reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -225,17 +261,36 @@ export default function DashboardMobile({
 
       {/* 2×2 stat grid */}
       <div className="grid grid-cols-2 gap-3">
-        {stats.map((stat, i) => (
-          <StatCard
-            key={stat.label}
-            label={stat.label}
-            value={stat.value}
-            sub={stat.sub}
-            tone={stat.tone}
-            index={i}
-            loading={i === 1 || i === 2 ? summary.loading : false}
-          />
-        ))}
+        {stats.map((stat, i) => {
+          const deltaChip =
+            i === 0 && spendDelta.pct !== null ? (
+              <span
+                className={cn(
+                  'ml-1 inline-flex items-center gap-0.5 font-code text-[0.55rem]',
+                  spendDelta.pct > 0 ? 'text-destructive' : 'text-primary',
+                )}
+              >
+                {spendDelta.pct > 0 ? (
+                  <TrendingUp className="h-2.5 w-2.5" />
+                ) : (
+                  <TrendingDown className="h-2.5 w-2.5" />
+                )}
+                {spendDelta.pct > 0 ? '▲' : '▼'} {Math.abs(spendDelta.pct).toFixed(1)}%
+              </span>
+            ) : undefined;
+          return (
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              sub={stat.sub}
+              tone={stat.tone}
+              index={i}
+              loading={i === 1 || i === 2 ? summary.loading : false}
+              deltaChip={deltaChip}
+            />
+          );
+        })}
       </div>
 
       {/* Recent entries card */}
@@ -277,15 +332,27 @@ export default function DashboardMobile({
               <TabsList className="h-7 gap-0.5 px-0.5">
                 <TabsTrigger
                   value="category"
-                  className="font-code h-6 px-2 text-[0.58rem] uppercase tracking-[0.12em]"
+                  className="font-code h-6 px-1.5 text-[0.55rem] uppercase tracking-[0.1em]"
                 >
-                  By Cat
+                  Cat
                 </TabsTrigger>
                 <TabsTrigger
                   value="monthly"
-                  className="font-code h-6 px-2 text-[0.58rem] uppercase tracking-[0.12em]"
+                  className="font-code h-6 px-1.5 text-[0.55rem] uppercase tracking-[0.1em]"
                 >
-                  By Month
+                  Month
+                </TabsTrigger>
+                <TabsTrigger
+                  value="daily"
+                  className="font-code h-6 px-1.5 text-[0.55rem] uppercase tracking-[0.1em]"
+                >
+                  Daily
+                </TabsTrigger>
+                <TabsTrigger
+                  value="payment"
+                  className="font-code h-6 px-1.5 text-[0.55rem] uppercase tracking-[0.1em]"
+                >
+                  Pay
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -397,8 +464,159 @@ export default function DashboardMobile({
                 </ChartContainer>
               )}
             </TabsContent>
+            <TabsContent value="daily" className="m-0">
+              {dailyChartData.every((d) => d.amount === 0) ? (
+                <div className="flex h-[200px] items-center justify-center">
+                  <p className="font-code text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+                    No daily data for {monthLabel}
+                  </p>
+                </div>
+              ) : (
+                <ChartContainer config={dailyChartConfig} className="h-[260px] w-full">
+                  <AreaChart
+                    data={dailyChartData}
+                    margin={{ top: 8, right: 10, bottom: 8, left: 10 }}
+                  >
+                    <defs>
+                      <linearGradient id="dailyGradMobile" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.18} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={6}
+                      interval={6}
+                      tick={{ fontSize: 9 }}
+                    />
+                    <YAxis
+                      tickFormatter={(value) =>
+                        `₹${Number(value).toLocaleString('en-IN', { notation: 'compact' })}`
+                      }
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={4}
+                      tick={{ fontSize: 9 }}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent
+                        formatter={(value) => [inrMobile(Number(value)), 'Spent']}
+                        labelFormatter={(label) => `Day ${label}`}
+                      />}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="amount"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={1.5}
+                      fill="url(#dailyGradMobile)"
+                      dot={false}
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              )}
+            </TabsContent>
+            <TabsContent value="payment" className="m-0">
+              {paymentChartData.length === 0 ? (
+                <div className="flex h-[200px] items-center justify-center">
+                  <p className="font-code text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+                    No payment data for {monthLabel}
+                  </p>
+                </div>
+              ) : (
+                <ChartContainer config={paymentChartConfig} className="mx-auto h-[280px] w-full">
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel nameKey="method" />}
+                    />
+                    <Pie
+                      data={paymentChartData}
+                      dataKey="amount"
+                      nameKey="method"
+                      innerRadius={48}
+                      outerRadius={78}
+                      paddingAngle={3}
+                      strokeWidth={0}
+                    >
+                      {paymentChartData.map((entry, index) => (
+                        <Cell key={`pay-cell-m-${index}`} fill={entry.fill} />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                            return (
+                              <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground font-headline text-lg font-semibold tnum"
+                                >
+                                  ₹{paymentTotal.toLocaleString('en-IN')}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 16}
+                                  className="fill-muted-foreground font-code text-[0.55rem] uppercase tracking-[0.2em]"
+                                >
+                                  total
+                                </tspan>
+                              </text>
+                            );
+                          }
+                        }}
+                      />
+                    </Pie>
+                    <ChartLegend
+                      content={<ChartLegendContent nameKey="method" />}
+                      className="flex-wrap gap-x-3 gap-y-1"
+                    />
+                  </PieChart>
+                </ChartContainer>
+              )}
+            </TabsContent>
           </CardContent>
         </Tabs>
+      </Card>
+
+      {/* Top Merchants card */}
+      <Card className="anim-rise" style={{ animationDelay: '500ms' }}>
+        <CardHeader className="pb-1">
+          <CardTitle className="font-headline text-lg font-medium">Top Merchants</CardTitle>
+          <CardDescription className="font-code text-[0.6rem] uppercase tracking-[0.15em]">
+            {monthLabel}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-1">
+          {topMerchants.length === 0 ? (
+            <p className="font-code py-4 text-center text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+              No entries for {monthLabel}
+            </p>
+          ) : (
+            <div>
+              {topMerchants.map((m, idx) => (
+                <React.Fragment key={m.description}>
+                  <div className="flex items-center gap-2.5 py-2">
+                    <span className="font-code text-[0.58rem] text-muted-foreground w-4 shrink-0 tnum">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <span className="flex-1 truncate text-sm font-medium">{m.description}</span>
+                    <span className="tnum font-code text-sm shrink-0">
+                      {inrMobile(m.amount)}
+                    </span>
+                  </div>
+                  {idx < topMerchants.length - 1 && (
+                    <div className="border-b border-dashed border-border/60" />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+        </CardContent>
       </Card>
 
       {/* Budgets section */}
@@ -438,6 +656,7 @@ export default function DashboardMobile({
                 const budget = budgets[cat.value];
                 const pct = Math.min((spent / budget) * 100, 100);
                 const over = spent > budget;
+                const overPace = spent > budget * budgetPace;
                 return (
                   <div key={cat.value} className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
@@ -460,7 +679,7 @@ export default function DashboardMobile({
                         </span>
                       </div>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
@@ -468,7 +687,14 @@ export default function DashboardMobile({
                           backgroundColor: over ? 'hsl(var(--destructive))' : cat.chartColor,
                         }}
                       />
+                      <div
+                        className="absolute top-0 h-full w-0.5 bg-foreground/40"
+                        style={{ left: `${Math.min(budgetPace * 100, 100)}%` }}
+                      />
                     </div>
+                    <p className={cn('font-code text-[0.55rem]', overPace ? 'text-destructive' : 'text-muted-foreground')}>
+                      {overPace ? 'over pace' : 'on track'}
+                    </p>
                   </div>
                 );
               })}

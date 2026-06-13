@@ -16,10 +16,10 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, TrendingDown, TrendingUp } from 'lucide-react';
 import { categoryBadge } from '@/lib/data';
 import { useCategories } from '@/hooks/use-categories';
 import { cn } from '@/lib/utils';
@@ -180,6 +180,83 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
     );
   }, [expenses]);
 
+  const dailyChartData = React.useMemo(() => {
+    const activeMonth = isAllTime ? currentMonthStart : (selectedMonth as Date);
+    const year = activeMonth.getFullYear();
+    const month = activeMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const totals: Record<number, number> = {};
+    for (let d = 1; d <= daysInMonth; d++) totals[d] = 0;
+    expenses.forEach((e) => {
+      const d = new Date(e.date);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        totals[d.getDate()] = (totals[d.getDate()] ?? 0) + e.amount;
+      }
+    });
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      return { day, label: String(day), amount: totals[day] };
+    });
+  }, [expenses, selectedMonth, isAllTime, currentMonthStart]);
+
+  const paymentChartData = React.useMemo(() => {
+    const colorMap: Record<string, string> = {
+      Card: '#6366f1',
+      UPI: '#f59e0b',
+      Cash: '#10b981',
+    };
+    const totals: Record<string, number> = {};
+    filteredExpenses.forEach((e) => {
+      totals[e.paymentMethod] = (totals[e.paymentMethod] ?? 0) + e.amount;
+    });
+    return ['Card', 'UPI', 'Cash']
+      .filter((m) => (totals[m] ?? 0) > 0)
+      .map((m) => ({ method: m, amount: totals[m], fill: colorMap[m] }));
+  }, [filteredExpenses]);
+
+  const spendDelta = React.useMemo(() => {
+    const activeMonth = isAllTime ? currentMonthStart : (selectedMonth as Date);
+    const prevMonth = new Date(activeMonth.getFullYear(), activeMonth.getMonth() - 1, 1);
+    const thisTotal = expenses
+      .filter((e) => isSameMonth(new Date(e.date), activeMonth))
+      .reduce((s, e) => s + e.amount, 0);
+    const lastTotal = expenses
+      .filter((e) => isSameMonth(new Date(e.date), prevMonth))
+      .reduce((s, e) => s + e.amount, 0);
+    const pct = lastTotal > 0 ? ((thisTotal - lastTotal) / lastTotal) * 100 : null;
+    return { thisTotal, lastTotal, pct };
+  }, [expenses, selectedMonth, isAllTime, currentMonthStart]);
+
+  const topMerchants = React.useMemo(() => {
+    const map: Record<string, { amount: number; display: string; count: number }> = {};
+    filteredExpenses.forEach((e) => {
+      const key = e.description.trim().toLowerCase();
+      if (!map[key]) map[key] = { amount: 0, display: e.description.trim(), count: 0 };
+      map[key].amount += e.amount;
+      map[key].count += 1;
+    });
+    return Object.values(map)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5)
+      .map(({ display, amount }) => ({ description: display, amount }));
+  }, [filteredExpenses]);
+
+  const budgetPace = React.useMemo(() => {
+    const activeMonth = isAllTime ? currentMonthStart : (selectedMonth as Date);
+    const year = activeMonth.getFullYear();
+    const month = activeMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const nowYear = now.getFullYear();
+    const nowMonth = now.getMonth();
+    if (year < nowYear || (year === nowYear && month < nowMonth)) {
+      return 1;
+    }
+    if (year === nowYear && month === nowMonth) {
+      return Math.min(now.getDate() / daysInMonth, 1);
+    }
+    return 0;
+  }, [selectedMonth, isAllTime, currentMonthStart, now]);
+
   const totalSpent = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   const stats = [
@@ -223,6 +300,20 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
       return acc;
     }, {} as Record<string, number>);
   }, [budgetExpenses]);
+
+  const dailyChartConfig: ChartConfig = {
+    amount: { label: 'Spent', color: 'hsl(var(--primary))' },
+  };
+
+  const paymentChartConfig: ChartConfig = React.useMemo(() => {
+    const cfg: ChartConfig = {};
+    paymentChartData.forEach((p) => {
+      cfg[p.method] = { label: p.method, color: p.fill };
+    });
+    return cfg;
+  }, [paymentChartData]);
+
+  const paymentTotal = paymentChartData.reduce((s, p) => s + p.amount, 0);
 
   const monthSwitcher = (
     <div className="flex items-center gap-1">
@@ -273,6 +364,11 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
           budgets={budgets}
           spentByCategory={spentByCategory}
           onOpenBudgetEditor={() => setBudgetEditorOpen(true)}
+          dailyChartData={dailyChartData}
+          paymentChartData={paymentChartData}
+          spendDelta={spendDelta}
+          topMerchants={topMerchants}
+          budgetPace={budgetPace}
         />
       </div>
 
@@ -303,6 +399,16 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                 </div>
                 <p className="mt-3 border-t border-dashed pt-2 font-code text-xs text-muted-foreground">
                   {stat.sub}
+                  {i === 0 && spendDelta.pct !== null && (
+                    <span className={cn('ml-2 inline-flex items-center gap-0.5 font-code text-[0.62rem]', spendDelta.pct > 0 ? 'text-destructive' : 'text-primary')}>
+                      {spendDelta.pct > 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      {spendDelta.pct > 0 ? '▲' : '▼'} {Math.abs(spendDelta.pct).toFixed(1)}% vs last month
+                    </span>
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -327,6 +433,8 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                   <TabsList>
                     <TabsTrigger value="category">By Category</TabsTrigger>
                     <TabsTrigger value="monthly">By Month</TabsTrigger>
+                    <TabsTrigger value="daily">Daily</TabsTrigger>
+                    <TabsTrigger value="payment">Payment</TabsTrigger>
                   </TabsList>
                 </div>
               </div>
@@ -436,8 +544,160 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                   </ChartContainer>
                 )}
               </TabsContent>
+              <TabsContent value="daily" className="m-0">
+                {dailyChartData.every((d) => d.amount === 0) ? (
+                  <div className="flex h-[300px] items-center justify-center">
+                    <p className="font-code text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+                      No daily data for {monthLabel}
+                    </p>
+                  </div>
+                ) : (
+                  <ChartContainer config={dailyChartConfig} className="h-[300px] w-full">
+                    <AreaChart
+                      data={dailyChartData}
+                      margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
+                    >
+                      <defs>
+                        <linearGradient id="dailyGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.18} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        interval={4}
+                        tickFormatter={(v) => `${v}`}
+                      />
+                      <YAxis
+                        tickFormatter={(value) =>
+                          `₹${Number(value).toLocaleString('en-IN', { notation: 'compact' })}`
+                        }
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={10}
+                      />
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent
+                          formatter={(value) => [inr(Number(value)), 'Spent']}
+                          labelFormatter={(label) => `Day ${label}`}
+                        />}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="amount"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={1.5}
+                        fill="url(#dailyGrad)"
+                        dot={false}
+                      />
+                    </AreaChart>
+                  </ChartContainer>
+                )}
+              </TabsContent>
+              <TabsContent value="payment" className="m-0">
+                {paymentChartData.length === 0 ? (
+                  <div className="flex h-[300px] items-center justify-center">
+                    <p className="font-code text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+                      No payment data for {monthLabel}
+                    </p>
+                  </div>
+                ) : (
+                  <ChartContainer config={paymentChartConfig} className="mx-auto h-[300px] w-full">
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel nameKey="method" />}
+                      />
+                      <Pie
+                        data={paymentChartData}
+                        dataKey="amount"
+                        nameKey="method"
+                        innerRadius={60}
+                        outerRadius={95}
+                        paddingAngle={3}
+                        strokeWidth={0}
+                      >
+                        {paymentChartData.map((entry, index) => (
+                          <Cell key={`pay-cell-${index}`} fill={entry.fill} />
+                        ))}
+                        <Label
+                          content={({ viewBox }) => {
+                            if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                              return (
+                                <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={viewBox.cy}
+                                    className="fill-foreground font-headline text-2xl font-semibold tnum"
+                                  >
+                                    ₹{paymentTotal.toLocaleString('en-IN')}
+                                  </tspan>
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={(viewBox.cy || 0) + 22}
+                                    className="fill-muted-foreground font-code text-[0.6rem] uppercase tracking-[0.2em]"
+                                  >
+                                    total
+                                  </tspan>
+                                </text>
+                              );
+                            }
+                          }}
+                        />
+                      </Pie>
+                      <ChartLegend
+                        content={<ChartLegendContent nameKey="method" />}
+                        className="flex-wrap gap-x-4 gap-y-1"
+                      />
+                    </PieChart>
+                  </ChartContainer>
+                )}
+              </TabsContent>
             </CardContent>
           </Tabs>
+        </Card>
+
+        {/* Top Merchants card */}
+        <Card className="anim-rise" style={{ animationDelay: '410ms' }}>
+          <CardHeader>
+            <CardTitle className="font-headline text-2xl font-medium">Top Merchants</CardTitle>
+            <CardDescription className="font-code text-[0.6rem] uppercase tracking-[0.15em]">
+              {monthLabel}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {topMerchants.length === 0 ? (
+              <div className="flex h-[80px] items-center justify-center">
+                <p className="font-code text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+                  No entries for {monthLabel}
+                </p>
+              </div>
+            ) : (
+              <div>
+                {topMerchants.map((m, idx) => (
+                  <React.Fragment key={m.description}>
+                    <div className="flex items-center gap-3 py-2.5">
+                      <span className="font-code text-[0.6rem] text-muted-foreground w-4 shrink-0 tnum">
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
+                      <span className="flex-1 truncate text-sm font-medium">{m.description}</span>
+                      <span className="tnum font-code text-sm shrink-0">
+                        {inr(m.amount)}
+                      </span>
+                    </div>
+                    {idx < topMerchants.length - 1 && (
+                      <div className="border-b border-dashed border-border/60" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+          </CardContent>
         </Card>
 
         {/* Budgets card */}
@@ -483,6 +743,7 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                   const budget = budgets[cat.value];
                   const pct = Math.min((spent / budget) * 100, 100);
                   const over = spent > budget;
+                  const overPace = spent > budget * budgetPace;
                   return (
                     <div key={cat.value} className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
@@ -505,7 +766,7 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                           </span>
                         </div>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -513,7 +774,14 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                             backgroundColor: over ? 'hsl(var(--destructive))' : cat.chartColor,
                           }}
                         />
+                        <div
+                          className="absolute top-0 h-full w-0.5 bg-foreground/40"
+                          style={{ left: `${Math.min(budgetPace * 100, 100)}%` }}
+                        />
                       </div>
+                      <p className={cn('font-code text-[0.55rem]', overPace ? 'text-destructive' : 'text-muted-foreground')}>
+                        {overPace ? 'over pace' : 'on track'}
+                      </p>
                     </div>
                   );
                 })}
