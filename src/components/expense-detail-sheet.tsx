@@ -5,7 +5,8 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { getCategory, getPaymentMethod } from '@/lib/data';
+import { categoryBadge, getPaymentMethod } from '@/lib/data';
+import { useCategories } from '@/hooks/use-categories';
 import type { DisplayExpense } from '@/components/expense-list';
 
 import {
@@ -75,8 +76,10 @@ function DetailContent({
   onDelete: (e: DisplayExpense) => void;
   onClose: () => void;
 }) {
+  const { getCategory } = useCategories();
   const category = getCategory(expense.category);
   const CategoryIcon = category.icon;
+  const badge = categoryBadge(category);
   const paymentMethod = getPaymentMethod(expense.paymentMethod);
   const PaymentIcon = paymentMethod.icon;
 
@@ -97,7 +100,7 @@ function DetailContent({
       {/* Dashed rows */}
       <div className="pt-2">
         <DetailRow label="Category">
-          <Badge variant="outline" className={cn('w-fit items-center gap-1.5', category.color)}>
+          <Badge variant="outline" className={cn('w-fit items-center gap-1.5', badge.className)} style={badge.style}>
             <CategoryIcon className="h-3.5 w-3.5" />
             <span>{category.label}</span>
           </Badge>

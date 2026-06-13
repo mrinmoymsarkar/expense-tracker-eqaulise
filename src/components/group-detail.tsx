@@ -28,7 +28,8 @@ import { useGroupExpenses } from "@/hooks/use-group-expenses";
 import { useSettlements } from "@/hooks/use-settlements";
 import { useGroupBalances } from "@/hooks/use-group-balances";
 import { useToast } from "@/hooks/use-toast";
-import { getCategory } from "@/lib/data";
+import { categoryBadge } from "@/lib/data";
+import { useCategories } from "@/hooks/use-categories";
 import { cn } from "@/lib/utils";
 import { GroupMemberManager } from "@/components/group-member-manager";
 import { SettleUpSheet } from "@/components/settle-up-sheet";
@@ -44,6 +45,7 @@ export default function GroupDetail({
   const { user } = useAuth();
   const uid = user?.uid ?? "";
   const { toast } = useToast();
+  const { getCategory } = useCategories();
 
   const { expenses, loading: expLoading } = useGroupExpenses(group.id);
   const { settlements, loading: settleLoading } = useSettlements(group.id);
@@ -360,6 +362,7 @@ export default function GroupDetail({
               {expenses.map((exp) => {
                 const cat = getCategory(exp.category);
                 const CatIcon = cat.icon;
+                const catBadge = categoryBadge(cat);
                 const paidByName = getMemberName(exp.paidBy);
                 return (
                   <div
@@ -369,8 +372,9 @@ export default function GroupDetail({
                     <div
                       className={cn(
                         "flex h-9 w-9 shrink-0 items-center justify-center rounded-md",
-                        cat.color
+                        catBadge.className
                       )}
+                      style={catBadge.style}
                     >
                       <CatIcon className="h-4 w-4" />
                     </div>
@@ -393,8 +397,9 @@ export default function GroupDetail({
                         variant="outline"
                         className={cn(
                           "font-code text-[0.55rem] uppercase tracking-[0.1em] px-1 py-0",
-                          cat.color
+                          catBadge.className
                         )}
+                        style={catBadge.style}
                       >
                         {cat.label}
                       </Badge>

@@ -5,7 +5,8 @@ import { Search, X, Users, Trash2 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { categories, getCategory, getPaymentMethod } from '@/lib/data';
+import { categoryBadge, getPaymentMethod } from '@/lib/data';
+import { useCategories } from '@/hooks/use-categories';
 import { useSwipeToDelete } from '@/hooks/use-swipe-to-delete';
 
 /* ------------------------------------------------------------------ */
@@ -54,8 +55,10 @@ function ExpenseRow({
   onDelete: (e: DisplayExpense) => void;
 }) {
   const { handlers, translateX, swiping } = useSwipeToDelete(() => onDelete(expense));
+  const { getCategory } = useCategories();
   const category = getCategory(expense.category);
   const CategoryIcon = category.icon;
+  const badge = categoryBadge(category);
   const paymentMethod = getPaymentMethod(expense.paymentMethod);
   const PaymentIcon = paymentMethod.icon;
 
@@ -92,8 +95,9 @@ function ExpenseRow({
         <div
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-none text-sm',
-            category.color,
+            badge.className,
           )}
+          style={badge.style}
         >
           <CategoryIcon className="h-4 w-4" />
         </div>
@@ -171,6 +175,7 @@ export function ExpenseList({
   showSearch = true,
   groups,
 }: ExpenseListProps) {
+  const { categories } = useCategories();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);

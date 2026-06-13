@@ -7,6 +7,10 @@ function readAsDataUri(file: File): Promise<string> {
   });
 }
 
+export async function fileToDataUri(file: File): Promise<string> {
+  return readAsDataUri(file);
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();

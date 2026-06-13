@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download } from 'lucide-react';
-import { getCategory, getPaymentMethod } from '@/lib/data';
+import { categoryBadge, getPaymentMethod } from '@/lib/data';
+import { useCategories } from '@/hooks/use-categories';
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +45,7 @@ export default function Expenses({
   const { toast } = useToast();
   const { updatePersonalExpense, deletePersonalExpense } = useData();
   const { user } = useAuth();
+  const { getCategory } = useCategories();
 
   /* Sheet / dialog state */
   const [selectedExpense, setSelectedExpense] = useState<DisplayExpense | null>(null);
@@ -221,6 +223,7 @@ export default function Expenses({
                 {visibleExpenses.map((expense) => {
                   const cat = getCategory(expense.category);
                   const CatIcon = cat.icon;
+                  const catBadge = categoryBadge(cat);
                   const pm = getPaymentMethod(expense.paymentMethod);
                   const PmIcon = pm.icon;
                   return (
@@ -233,7 +236,8 @@ export default function Expenses({
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={cn('w-fit items-center gap-2', cat.color)}
+                          className={cn('w-fit items-center gap-2', catBadge.className)}
+                          style={catBadge.style}
                         >
                           <CatIcon className="h-4 w-4" />
                           <span>{expense.category}</span>

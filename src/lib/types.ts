@@ -3,7 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 export type SplitMethod = 'equal' | 'exact' | 'percentage';
 export type SplitMap = Record<string, number>;
 export type PaymentMethod = 'Card' | 'UPI' | 'Cash';
-export type Category = 'Food' | 'Shopping' | 'Transport' | 'Housing' | 'Entertainment' | 'Health' | 'Travel';
+export type Category = 'Food' | 'Shopping' | 'Transport' | 'Housing' | 'Entertainment' | 'Health' | 'Travel' | (string & {});
 
 export interface RecurringExpense {
   id: string;
@@ -94,6 +94,7 @@ export interface UserProfile {
   createdAt: Timestamp;
   budgets?: Record<string, number>;
   recurring?: RecurringExpense[];
+  categories?: Array<{ value: string; label: string; icon: string; chartColor: string }>;
 }
 
 export interface MemberBalance {

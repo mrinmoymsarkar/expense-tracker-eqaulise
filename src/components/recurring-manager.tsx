@@ -35,8 +35,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useData } from '@/components/providers/data-provider';
 import { useToast } from '@/hooks/use-toast';
-import { getCategory } from '@/lib/data';
-import { categories, paymentMethods } from '@/lib/data';
+import { categoryBadge, paymentMethods } from '@/lib/data';
+import { useCategories } from '@/hooks/use-categories';
 import { cn } from '@/lib/utils';
 import type { RecurringExpense, Category, PaymentMethod } from '@/lib/types';
 
@@ -88,6 +88,7 @@ function RecurringDialog({
   initial: FormState;
   onSave: (form: FormState) => Promise<void>;
 }) {
+  const { categories } = useCategories();
   const [form, setForm] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -274,13 +275,15 @@ function RecurringRow({
   onToggle: (item: RecurringExpense) => void;
   onRemove: (item: RecurringExpense) => void;
 }) {
+  const { getCategory } = useCategories();
   const cat = getCategory(item.category);
   const CatIcon = cat.icon;
+  const badge = categoryBadge(cat);
 
   return (
     <div className="flex items-center gap-3 border-b border-dashed border-border/60 py-3 last:border-0">
       {/* Category icon */}
-      <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-sm', cat.color)}>
+      <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-sm', badge.className)} style={badge.style}>
         <CatIcon className="h-4 w-4" />
       </span>
 
@@ -293,7 +296,7 @@ function RecurringRow({
       </div>
 
       {/* Category badge — hidden on small screens */}
-      <Badge variant="outline" className={cn('hidden shrink-0 sm:flex items-center gap-1.5', cat.color)}>
+      <Badge variant="outline" className={cn('hidden shrink-0 sm:flex items-center gap-1.5', badge.className)} style={badge.style}>
         {item.category}
       </Badge>
 

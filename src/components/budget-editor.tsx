@@ -21,7 +21,9 @@ import {
 import { useData } from '@/components/providers/data-provider';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
-import { categories } from '@/lib/data';
+import { categoryBadge } from '@/lib/data';
+import { useCategories } from '@/hooks/use-categories';
+import { cn } from '@/lib/utils';
 
 interface BudgetEditorProps {
   open: boolean;
@@ -31,6 +33,7 @@ interface BudgetEditorProps {
 function BudgetEditorBody({ onClose }: { onClose: () => void }) {
   const { profile, updateProfile } = useData();
   const { toast } = useToast();
+  const { categories } = useCategories();
 
   const [values, setValues] = React.useState<Record<string, string>>(() => {
     const b = profile?.budgets ?? {};
@@ -72,11 +75,14 @@ function BudgetEditorBody({ onClose }: { onClose: () => void }) {
           const Icon = cat.icon;
           return (
             <div key={cat.value} className="flex items-center gap-3">
+              {(() => { const badge = categoryBadge(cat); return (
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${cat.color}`}
+                className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-md', badge.className)}
+                style={badge.style}
               >
                 <Icon className="h-3.5 w-3.5" />
               </div>
+              ); })()}
               <Label className="min-w-[120px] font-code text-[0.65rem] uppercase tracking-[0.15em]">
                 {cat.label}
               </Label>

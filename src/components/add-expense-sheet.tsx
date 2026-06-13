@@ -16,21 +16,25 @@ import {
   ChevronDown,
   Sparkles,
   X,
+  Plus,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { Group, ExpenseFormValues, SplitMethod, SplitMap, Category, PaymentMethod } from '@/lib/types';
 import { expenseFormSchema } from '@/lib/schemas';
-import { categories, paymentMethods } from '@/lib/data';
+import { paymentMethods } from '@/lib/data';
 import { computeSplits } from '@/lib/balances';
 import { processReceipt, getSplitSuggestion } from '@/app/actions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLastPaymentMethod } from '@/hooks/use-last-payment-method';
 import { useSwipeDown } from '@/hooks/use-swipe-down';
 import { useVisualViewport } from '@/hooks/use-visual-viewport';
+import { useCategories } from '@/hooks/use-categories';
 import { useAuth } from '@/components/providers/auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { SplitEditor } from '@/components/split-editor';
+import { CategoryEditor } from '@/components/category-editor';
+import { ReceiptCropSheet } from '@/components/receipt-crop-sheet';
 
 import {
   Sheet,
@@ -150,10 +154,14 @@ function ExpenseFormBody({
 }: ExpenseFormBodyProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { categories } = useCategories();
   const [lastPm, setLastPm] = useLastPaymentMethod();
   const swipe = useSwipeDown(onClose);
 
   const [isScanning, setIsScanning] = useState(false);
+  const [cropSource, setCropSource] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [categoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -264,15 +272,10 @@ function ExpenseFormBody({
   }
 
   /* Receipt scan ---------------------------------------------------- */
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const runScan = useCallback(
+    async (dataUri: string) => {
       setIsScanning(true);
       try {
-        const { fileToCompressedDataUri } = await import('@/lib/image');
-        const dataUri = await fileToCompressedDataUri(file);
-
         let geminiOk = false;
         try {
           const result = await processReceipt({ receiptDataUri: dataUri });
@@ -289,7 +292,7 @@ function ExpenseFormBody({
             geminiOk = true;
           }
         } catch {
-          // fall through to local OCR
+          // fall through to error toast
         }
 
         if (!geminiOk) {
@@ -301,10 +304,22 @@ function ExpenseFormBody({
         }
       } finally {
         setIsScanning(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
-    [toast],
+    [categories, toast],
+  );
+
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      const { fileToDataUri } = await import('@/lib/image');
+      const dataUri = await fileToDataUri(file);
+      setCropSource(dataUri);
+      setCropOpen(true);
+    },
+    [],
   );
 
   /* AI split suggestion --------------------------------------------- */
@@ -406,22 +421,17 @@ function ExpenseFormBody({
     };
 
     setIsSubmitting(true);
-    try {
-      await onSubmit(values, initialValues?.id);
-      toast({
-        title: isEditMode ? 'Entry updated' : 'Added to ledger',
-        description: `₹${amountNum.toFixed(2)} — ${values.description}`,
-      });
-      onClose();
-    } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Firestore offline persistence: write promises don't resolve until server ACKs,
+    // but the local cache + onSnapshot listener reflect the write immediately.
+    onSubmit(values, initialValues?.id).catch((err) =>
+      toast({ variant: 'destructive', title: 'Sync error', description: err instanceof Error ? err.message : 'Could not save' })
+    );
+    toast({
+      title: isEditMode ? 'Entry updated' : 'Added to ledger',
+      description: `₹${amountNum.toFixed(2)} — ${values.description}`,
+    });
+    setIsSubmitting(false);
+    onClose();
   }, [
     validate,
     formState,
@@ -606,8 +616,22 @@ function ExpenseFormBody({
                   </button>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => setCategoryEditorOpen(true)}
+                className="flex min-h-[44px] shrink-0 snap-start flex-col items-center gap-1 rounded-md border border-dashed border-border bg-card px-3 py-2 font-code text-[0.6rem] uppercase tracking-wider text-muted-foreground hover:bg-muted transition-colors"
+                aria-label="New category"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New</span>
+              </button>
             </div>
           </div>
+          <CategoryEditor
+            open={categoryEditorOpen}
+            onOpenChange={setCategoryEditorOpen}
+            editing={null}
+          />
 
           {/* 4. Payment pills */}
           <div className="space-y-2">
@@ -866,6 +890,13 @@ function ExpenseFormBody({
         </div>
       </div>
 
+      <ReceiptCropSheet
+        open={cropOpen}
+        imageDataUri={cropSource}
+        onCancel={() => { setCropOpen(false); setCropSource(null); }}
+        onConfirm={(cropped) => { setCropOpen(false); setCropSource(null); runScan(cropped); }}
+      />
+
       {/* Sticky footer */}
       <div
         className="shrink-0 border-t bg-background px-4 py-3"
@@ -906,7 +937,7 @@ export function AddExpenseSheet({
 }: AddExpenseSheetProps) {
   const isMobile = useIsMobile();
   const isEditMode = Boolean(initialValues?.id);
-  const { vvHeight, keyboardOpen } = useVisualViewport();
+  const { vvHeight, keyboardOpen, keyboardInset } = useVisualViewport();
   const [mounted, setMounted] = React.useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -938,7 +969,7 @@ export function AddExpenseSheet({
         <SheetContent
           side="bottom"
           className="h-[92svh] rounded-t-lg border-t p-0 flex flex-col"
-          style={keyboardOpen && vvHeight ? { height: vvHeight, maxHeight: vvHeight } : undefined}
+          style={keyboardOpen && vvHeight ? { height: vvHeight, maxHeight: vvHeight, bottom: keyboardInset } : undefined}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{isEditMode ? 'Edit expense' : 'Add expense'}</SheetTitle>

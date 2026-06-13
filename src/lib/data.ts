@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import {
   Utensils,
   ShoppingCart,
@@ -10,6 +11,20 @@ import {
   CreditCard,
   Smartphone,
   Wallet,
+  ShoppingBasket,
+  Coffee,
+  Pizza,
+  Gift,
+  Dumbbell,
+  BookOpen,
+  Bus,
+  Heart,
+  Wrench,
+  Shirt,
+  Zap,
+  PawPrint,
+  Gamepad2,
+  Tag,
 } from "lucide-react";
 
 export const categories: {
@@ -106,5 +121,47 @@ export const getPaymentMethod = (paymentMethodValue: string) => {
   const method = paymentMethods.find((m) => m.value === paymentMethodValue);
   return method || paymentMethods[0];
 };
+
+export const iconMap: Record<string, LucideIcon> = {
+  ShoppingBasket,
+  Coffee,
+  Pizza,
+  Gift,
+  Dumbbell,
+  BookOpen,
+  Bus,
+  Plane,
+  Heart,
+  Wrench,
+  Shirt,
+  Zap,
+  PawPrint,
+  Gamepad2,
+};
+
+export const FALLBACK_ICON: LucideIcon = Tag;
+
+export const customColorPalette = [
+  '#f59e0b',
+  '#10b981',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#ef4444',
+  '#14b8a6',
+  '#eab308',
+  '#a855f7',
+  '#0ea5e9',
+  '#f43f5e',
+  '#65a30d',
+];
+
+export const builtinChartColors = categories.map((c) => c.chartColor);
+
+export function categoryBadge(cat: { color: string; chartColor: string }): { className: string; style?: CSSProperties } {
+  return cat.color
+    ? { className: cat.color, style: undefined }
+    : { className: '', style: { backgroundColor: `${cat.chartColor}26`, color: cat.chartColor } };
+}
 
 

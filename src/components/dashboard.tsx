@@ -20,24 +20,13 @@ import { Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
-import { categories, getCategory } from '@/lib/data';
+import { categoryBadge } from '@/lib/data';
+import { useCategories } from '@/hooks/use-categories';
 import { cn } from '@/lib/utils';
 import type { DisplayExpense } from '@/components/expense-list';
 import DashboardMobile from '@/components/dashboard-mobile';
 import { useData } from '@/components/providers/data-provider';
 import { BudgetEditor } from '@/components/budget-editor';
-
-/* ------------------------------------------------------------------ */
-/* Chart configs                                                       */
-/* ------------------------------------------------------------------ */
-
-const categoriesChartConfig = categories.reduce((config, category) => {
-  config[category.value] = {
-    label: category.label,
-    color: category.chartColor,
-  };
-  return config;
-}, {} as ChartConfig);
 
 /* ------------------------------------------------------------------ */
 /* Summary type                                                        */
@@ -91,6 +80,16 @@ function isSameMonth(date: Date, ref: Date): boolean {
 
 export default function Dashboard({ expenses, summary }: DashboardProps) {
   const { profile } = useData();
+  const { categories, getCategory } = useCategories();
+
+  const categoriesChartConfig = React.useMemo(
+    () =>
+      categories.reduce((cfg, c) => {
+        cfg[c.value] = { label: c.label, color: c.chartColor };
+        return cfg;
+      }, {} as ChartConfig),
+    [categories],
+  );
   const [selectedMonth, setSelectedMonth] = React.useState<Date | 'all'>(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -487,9 +486,11 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                     <div key={cat.value} className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded ${cat.color}`}>
+                          {(() => { const badge = categoryBadge(cat); return (
+                          <div className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded', badge.className)} style={badge.style}>
                             <Icon className="h-3 w-3" />
                           </div>
+                          ); })()}
                           <span className="font-code text-[0.65rem] uppercase tracking-[0.15em]">
                             {cat.label}
                           </span>

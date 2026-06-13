@@ -22,20 +22,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { categories, getCategory, getPaymentMethod } from '@/lib/data';
+import { categoryBadge, getPaymentMethod } from '@/lib/data';
+import { useCategories } from '@/hooks/use-categories';
 import type { DisplayExpense } from '@/components/expense-list';
-
-/* ------------------------------------------------------------------ */
-/* Chart config                                                         */
-/* ------------------------------------------------------------------ */
-
-const categoriesChartConfig = categories.reduce((config, category) => {
-  config[category.value] = {
-    label: category.label,
-    color: category.chartColor,
-  };
-  return config;
-}, {} as ChartConfig);
 
 /* ------------------------------------------------------------------ */
 /* Summary type                                                        */
@@ -104,8 +93,10 @@ function StatCard({
 /* ------------------------------------------------------------------ */
 
 function RecentRow({ expense }: { expense: DisplayExpense }) {
+  const { getCategory } = useCategories();
   const category = getCategory(expense.category);
   const CategoryIcon = category.icon;
+  const badge = categoryBadge(category);
 
   const dateLabel = (() => {
     const d = new Date(expense.date);
@@ -119,8 +110,9 @@ function RecentRow({ expense }: { expense: DisplayExpense }) {
       <div
         className={cn(
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-none text-sm',
-          category.color,
+          badge.className,
         )}
+        style={badge.style}
       >
         <CategoryIcon className="h-3.5 w-3.5" />
       </div>
@@ -181,6 +173,16 @@ export default function DashboardMobile({
   spentByCategory,
   onOpenBudgetEditor,
 }: DashboardMobileProps) {
+  const { categories } = useCategories();
+  const categoriesChartConfig = React.useMemo(
+    () =>
+      categories.reduce((cfg, c) => {
+        cfg[c.value] = { label: c.label, color: c.chartColor };
+        return cfg;
+      }, {} as ChartConfig),
+    [categories],
+  );
+
   const recentExpenses = expenses.slice(0, 5);
   const categoryTotal = React.useMemo(
     () => categoryChartData.reduce((sum, d) => sum + d.amount, 0),
@@ -368,9 +370,11 @@ export default function DashboardMobile({
                   <div key={cat.value} className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
-                        <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded ${cat.color}`}>
+                        {(() => { const badge = categoryBadge(cat); return (
+                        <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded', badge.className)} style={badge.style}>
                           <Icon className="h-2.5 w-2.5" />
                         </div>
+                        ); })()}
                         <span className="font-code text-[0.6rem] uppercase tracking-[0.12em]">
                           {cat.label}
                         </span>

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 
-export function useVisualViewport(): { vvHeight: number | null; keyboardOpen: boolean } {
+export function useVisualViewport(): { vvHeight: number | null; keyboardOpen: boolean; keyboardInset: number } {
   const [vvHeight, setVvHeight] = useState<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
 
   useEffect(() => {
     const vv = window.visualViewport;
@@ -14,6 +15,7 @@ export function useVisualViewport(): { vvHeight: number | null; keyboardOpen: bo
       const h = Math.round(vv!.height);
       setVvHeight(h);
       setKeyboardOpen(window.innerHeight - vv!.height > 100);
+      setKeyboardInset(window.innerHeight - vv!.height > 100 ? Math.max(0, Math.round(window.innerHeight - vv!.height)) : 0);
     }
 
     vv.addEventListener('resize', update);
@@ -26,5 +28,5 @@ export function useVisualViewport(): { vvHeight: number | null; keyboardOpen: bo
     };
   }, []);
 
-  return { vvHeight, keyboardOpen };
+  return { vvHeight, keyboardOpen, keyboardInset };
 }
