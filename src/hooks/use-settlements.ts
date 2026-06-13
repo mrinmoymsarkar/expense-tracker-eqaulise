@@ -57,12 +57,14 @@ export function useSettlements(groupId: string | null): {
     if (!user || !groupId) throw new Error('Not authenticated or no group');
     const db = getDb();
     const ref = collection(db, 'groups', groupId, 'settlements');
-    await addDoc(ref, {
+    // Firestore offline persistence: onSnapshot reflects the write from local cache
+    // immediately; awaiting server ACK hangs the UI, so fire and forget.
+    addDoc(ref, {
       ...data,
       date: serverTimestamp(),
       createdAt: serverTimestamp(),
       createdBy: user.uid,
-    });
+    }).catch(console.error);
   };
 
   return { settlements, loading, recordSettlement };

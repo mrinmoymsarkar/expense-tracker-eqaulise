@@ -262,6 +262,7 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
           stats={stats}
           expenses={filteredExpenses}
           categoryChartData={categoryChartData}
+          monthlyChartData={monthlyChartData}
           summary={summary}
           monthLabel={monthLabel}
           onPrev={handlePrev}
@@ -339,7 +340,7 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
                     </p>
                   </div>
                 ) : (
-                  <ChartContainer config={categoriesChartConfig} className="mx-auto aspect-square h-[300px]">
+                  <ChartContainer config={categoriesChartConfig} className="mx-auto h-[360px] w-full">
                     <PieChart>
                       <ChartTooltip
                         cursor={false}

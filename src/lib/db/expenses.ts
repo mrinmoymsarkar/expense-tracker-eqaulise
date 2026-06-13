@@ -14,13 +14,15 @@ import type { ExpenseFormValues } from '@/lib/types';
 
 // Standalone group-expense write for callers (e.g. AddExpenseSheet) that pick
 // the target group at submit time and can't use the groupId-bound hook.
+// Firestore offline persistence: onSnapshot reflects writes from local cache
+// immediately; awaiting server ACK hangs the UI, so fire and forget.
 export async function addGroupExpense(
   groupId: string,
   uid: string,
   v: ExpenseFormValues
 ): Promise<void> {
   const db = getDb();
-  await addDoc(collection(db, 'groups', groupId, 'expenses'), {
+  addDoc(collection(db, 'groups', groupId, 'expenses'), {
     description: v.description,
     category: v.category,
     amount: v.amount,
@@ -34,11 +36,11 @@ export async function addGroupExpense(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     createdBy: uid,
-  });
-  await updateDoc(doc(db, 'groups', groupId), {
+  }).catch(console.error);
+  updateDoc(doc(db, 'groups', groupId), {
     totalExpenses: increment(v.amount),
     updatedAt: serverTimestamp(),
-  });
+  }).catch(console.error);
 }
 
 export async function updateGroupExpense(
@@ -52,7 +54,7 @@ export async function updateGroupExpense(
   const existing = await getDoc(expRef);
   const oldAmount: number = existing.exists() ? (existing.data().amount ?? 0) : 0;
 
-  await updateDoc(expRef, {
+  updateDoc(expRef, {
     description: v.description,
     category: v.category,
     amount: v.amount,
@@ -64,11 +66,11 @@ export async function updateGroupExpense(
     splitMethod: v.splitMethod ?? 'equal',
     splits: v.splits ?? {},
     updatedAt: serverTimestamp(),
-  });
-  await updateDoc(doc(db, 'groups', groupId), {
+  }).catch(console.error);
+  updateDoc(doc(db, 'groups', groupId), {
     totalExpenses: increment(v.amount - oldAmount),
     updatedAt: serverTimestamp(),
-  });
+  }).catch(console.error);
 }
 
 export async function deleteGroupExpense(
@@ -80,9 +82,9 @@ export async function deleteGroupExpense(
   const existing = await getDoc(expRef);
   const amount: number = existing.exists() ? (existing.data().amount ?? 0) : 0;
 
-  await deleteDoc(expRef);
-  await updateDoc(doc(db, 'groups', groupId), {
+  deleteDoc(expRef).catch(console.error);
+  updateDoc(doc(db, 'groups', groupId), {
     totalExpenses: increment(-amount),
     updatedAt: serverTimestamp(),
-  });
+  }).catch(console.error);
 }

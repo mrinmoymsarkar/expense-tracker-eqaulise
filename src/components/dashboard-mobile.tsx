@@ -17,7 +17,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { Cell, Label, Pie, PieChart } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
@@ -142,6 +143,7 @@ interface DashboardMobileProps {
   stats: { label: string; value: string; sub: string; tone?: string }[];
   expenses: DisplayExpense[];
   categoryChartData: { category: string; amount: number; color: string }[];
+  monthlyChartData: Record<string, number | string>[];
   summary: Summary;
   monthLabel: string;
   onPrev: () => void;
@@ -162,6 +164,7 @@ export default function DashboardMobile({
   stats,
   expenses,
   categoryChartData,
+  monthlyChartData,
   summary,
   monthLabel,
   onPrev,
@@ -260,73 +263,142 @@ export default function DashboardMobile({
         </CardContent>
       </Card>
 
-      {/* Category chart */}
+      {/* Charts card — tabbed */}
       <Card className="anim-rise" style={{ animationDelay: '450ms' }}>
-        <CardHeader className="pb-1">
-          <CardTitle className="font-headline text-lg font-medium">By Category</CardTitle>
-          <CardDescription className="font-code text-[0.6rem] uppercase tracking-[0.15em]">
-            {monthLabel}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {categoryChartData.length === 0 ? (
-            <div className="flex h-[200px] items-center justify-center">
-              <p className="font-code text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-                No expenses for {monthLabel}
-              </p>
-            </div>
-          ) : (
-            <ChartContainer config={categoriesChartConfig} className="mx-auto aspect-square h-[260px]">
-              <PieChart>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel nameKey="category" />}
-                />
-                <Pie
-                  data={categoryChartData}
-                  dataKey="amount"
-                  nameKey="category"
-                  innerRadius={55}
-                  outerRadius={82}
-                  paddingAngle={2}
-                  strokeWidth={0}
+        <Tabs defaultValue="category">
+          <CardHeader className="pb-1">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <CardTitle className="font-headline text-lg font-medium">Spending</CardTitle>
+                <CardDescription className="font-code text-[0.6rem] uppercase tracking-[0.15em]">
+                  {monthLabel}
+                </CardDescription>
+              </div>
+              <TabsList className="h-7 gap-0.5 px-0.5">
+                <TabsTrigger
+                  value="category"
+                  className="font-code h-6 px-2 text-[0.58rem] uppercase tracking-[0.12em]"
                 >
-                  {categoryChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                  <Label
-                    content={({ viewBox }) => {
-                      if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
-                        return (
-                          <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
-                            <tspan
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              className="fill-foreground font-headline text-xl font-semibold tnum"
-                            >
-                              ₹{categoryTotal.toLocaleString('en-IN')}
-                            </tspan>
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy || 0) + 18}
-                              className="fill-muted-foreground font-code text-[0.55rem] uppercase tracking-[0.2em]"
-                            >
-                              total spent
-                            </tspan>
-                          </text>
-                        );
+                  By Cat
+                </TabsTrigger>
+                <TabsTrigger
+                  value="monthly"
+                  className="font-code h-6 px-2 text-[0.58rem] uppercase tracking-[0.12em]"
+                >
+                  By Month
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <TabsContent value="category" className="m-0">
+              {categoryChartData.length === 0 ? (
+                <div className="flex h-[200px] items-center justify-center">
+                  <p className="font-code text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+                    No expenses for {monthLabel}
+                  </p>
+                </div>
+              ) : (
+                <ChartContainer config={categoriesChartConfig} className="mx-auto h-[320px] w-full">
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel nameKey="category" />}
+                    />
+                    <Pie
+                      data={categoryChartData}
+                      dataKey="amount"
+                      nameKey="category"
+                      innerRadius={55}
+                      outerRadius={82}
+                      paddingAngle={2}
+                      strokeWidth={0}
+                    >
+                      {categoryChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                            return (
+                              <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground font-headline text-xl font-semibold tnum"
+                                >
+                                  ₹{categoryTotal.toLocaleString('en-IN')}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 18}
+                                  className="fill-muted-foreground font-code text-[0.55rem] uppercase tracking-[0.2em]"
+                                >
+                                  total spent
+                                </tspan>
+                              </text>
+                            );
+                          }
+                        }}
+                      />
+                    </Pie>
+                    <ChartLegend
+                      content={<ChartLegendContent nameKey="category" />}
+                      className="flex-wrap gap-x-3 gap-y-1"
+                    />
+                  </PieChart>
+                </ChartContainer>
+              )}
+            </TabsContent>
+            <TabsContent value="monthly" className="m-0">
+              {monthlyChartData.length === 0 ? (
+                <div className="flex h-[200px] items-center justify-center">
+                  <p className="font-code text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+                    No monthly data yet
+                  </p>
+                </div>
+              ) : (
+                <ChartContainer config={categoriesChartConfig} className="h-[280px] w-full">
+                  <BarChart
+                    data={monthlyChartData}
+                    accessibilityLayer
+                    margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      tickMargin={8}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <YAxis
+                      tickFormatter={(value) =>
+                        `₹${Number(value).toLocaleString('en-IN', { notation: 'compact' })}`
                       }
-                    }}
-                  />
-                </Pie>
-                <ChartLegend
-                  content={<ChartLegendContent nameKey="category" />}
-                  className="flex-wrap gap-x-3 gap-y-1"
-                />
-              </PieChart>
-            </ChartContainer>
-          )}
-        </CardContent>
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={6}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent indicator="dot" hideLabel />}
+                    />
+                    {Object.keys(categoriesChartConfig).map((key) => (
+                      <Bar
+                        key={key}
+                        dataKey={key}
+                        fill={`var(--color-${key})`}
+                        stackId="a"
+                      />
+                    ))}
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </TabsContent>
+          </CardContent>
+        </Tabs>
       </Card>
 
       {/* Budgets section */}

@@ -49,34 +49,48 @@ export function useUserProfile(): {
   const updateProfile = async (data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>) => {
     if (!user) return;
     const db = getDb();
-    await setDoc(doc(db, 'users', user.uid), data, { merge: true });
+    // Firestore offline persistence: write promises resolve only on server ACK,
+    // but the local cache + onSnapshot reflect the change immediately. Awaiting
+    // them hangs the UI (spinner stuck) until the server responds, so we fire the
+    // writes and let them settle in the background.
+    setDoc(doc(db, 'users', user.uid), data, { merge: true }).catch(console.error);
+
+    const displayChanged =
+      data.displayName !== undefined ||
+      data.photoURL !== undefined ||
+      data.email !== undefined ||
+      data.upiId !== undefined;
+    if (!displayChanged) return;
 
     if (data.displayName !== undefined || data.photoURL !== undefined) {
       const { auth } = await import('@/lib/firebase');
       const { updateProfile: updateAuthProfile } = await import('firebase/auth');
       if (auth.currentUser) {
-        await updateAuthProfile(auth.currentUser, {
+        updateAuthProfile(auth.currentUser, {
           ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
           ...(data.photoURL !== undefined ? { photoURL: data.photoURL } : {}),
-        });
+        }).catch(console.error);
       }
     }
 
-    // Denormalize member info into all groups this user belongs to (best-effort)
-    const groupsRef = collection(db, 'groups');
-    const q = query(groupsRef, where('memberUids', 'array-contains', user.uid));
-    const snap = await getDocs(q);
+    // Denormalize member info into all groups this user belongs to (best-effort,
+    // non-blocking — only when display fields changed).
     const memberInfo = {
       displayName: data.displayName ?? profile?.displayName ?? '',
       photoURL: data.photoURL ?? profile?.photoURL ?? null,
       email: data.email ?? profile?.email ?? '',
       ...(data.upiId !== undefined ? { upiId: data.upiId } : {}),
     };
-    await Promise.allSettled(
-      snap.docs.map((groupDoc) =>
-        updateDoc(groupDoc.ref, { [`members.${user.uid}`]: memberInfo })
-      )
-    );
+    (async () => {
+      const groupsRef = collection(db, 'groups');
+      const q = query(groupsRef, where('memberUids', 'array-contains', user.uid));
+      const snap = await getDocs(q);
+      await Promise.allSettled(
+        snap.docs.map((groupDoc) =>
+          updateDoc(groupDoc.ref, { [`members.${user.uid}`]: memberInfo })
+        )
+      );
+    })().catch(console.error);
   };
 
   return { profile, loading, updateProfile };

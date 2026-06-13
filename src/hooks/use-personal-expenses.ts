@@ -47,11 +47,13 @@ export function usePersonalExpenses(): {
     return unsub;
   }, [user]);
 
+  // Firestore offline persistence: onSnapshot reflects writes from local cache
+  // immediately; awaiting server ACK hangs the UI, so fire and forget.
   const addExpense = async (v: ExpenseFormValues) => {
     if (!user) throw new Error('Not authenticated');
     const db = getDb();
     const ref = collection(db, 'users', user.uid, 'personalExpenses');
-    await addDoc(ref, {
+    addDoc(ref, {
       description: v.description,
       category: v.category,
       amount: v.amount,
@@ -62,14 +64,14 @@ export function usePersonalExpenses(): {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: user.uid,
-    });
+    }).catch(console.error);
   };
 
   const updateExpense = async (id: string, v: ExpenseFormValues) => {
     if (!user) throw new Error('Not authenticated');
     const db = getDb();
     const ref = doc(db, 'users', user.uid, 'personalExpenses', id);
-    await updateDoc(ref, {
+    updateDoc(ref, {
       description: v.description,
       category: v.category,
       amount: v.amount,
@@ -78,13 +80,13 @@ export function usePersonalExpenses(): {
       notes: v.notes ?? '',
       tags: v.tags ?? [],
       updatedAt: serverTimestamp(),
-    });
+    }).catch(console.error);
   };
 
   const deleteExpense = async (id: string) => {
     if (!user) throw new Error('Not authenticated');
     const db = getDb();
-    await deleteDoc(doc(db, 'users', user.uid, 'personalExpenses', id));
+    deleteDoc(doc(db, 'users', user.uid, 'personalExpenses', id)).catch(console.error);
   };
 
   return { expenses, loading, addExpense, updateExpense, deleteExpense };

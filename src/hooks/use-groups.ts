@@ -101,7 +101,9 @@ export function useGroups(): {
       email: user.email ?? '',
     };
 
-    await setDoc(groupRef, {
+    // Firestore offline persistence: onSnapshot reflects the write from local cache
+    // immediately; awaiting server ACK hangs the UI, so fire and forget.
+    setDoc(groupRef, {
       name: data.name,
       imageUrl: 'https://placehold.co/400x200.png',
       imageHint: 'group image',
@@ -112,14 +114,14 @@ export function useGroups(): {
       totalExpenses: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    }).catch(console.error);
 
-    await setDoc(doc(db, 'inviteCodes', inviteCode), {
+    setDoc(doc(db, 'inviteCodes', inviteCode), {
       groupId: groupRef.id,
       createdBy: user.uid,
       createdAt: serverTimestamp(),
       expiresAt: null,
-    });
+    }).catch(console.error);
 
     return groupRef.id;
   };
@@ -141,11 +143,11 @@ export function useGroups(): {
       email: user.email ?? '',
     };
 
-    await updateDoc(doc(db, 'groups', groupId), {
+    updateDoc(doc(db, 'groups', groupId), {
       memberUids: arrayUnion(user.uid),
       [`members.${user.uid}`]: memberInfo,
       updatedAt: serverTimestamp(),
-    });
+    }).catch(console.error);
   };
 
   return { groups, loading, createGroup, joinGroupByCode };

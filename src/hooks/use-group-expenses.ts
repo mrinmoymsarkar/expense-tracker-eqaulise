@@ -49,11 +49,13 @@ export function useGroupExpenses(groupId: string | null): {
     return unsub;
   }, [user, groupId]);
 
+  // Firestore offline persistence: onSnapshot reflects writes from local cache
+  // immediately; awaiting server ACK hangs the UI, so fire and forget.
   const addExpense = async (v: ExpenseFormValues) => {
     if (!user || !groupId) throw new Error('Not authenticated or no group');
     const db = getDb();
     const ref = collection(db, 'groups', groupId, 'expenses');
-    await addDoc(ref, {
+    addDoc(ref, {
       description: v.description,
       category: v.category,
       amount: v.amount,
@@ -67,11 +69,11 @@ export function useGroupExpenses(groupId: string | null): {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: user.uid,
-    });
-    await updateDoc(doc(db, 'groups', groupId), {
+    }).catch(console.error);
+    updateDoc(doc(db, 'groups', groupId), {
       totalExpenses: increment(v.amount),
       updatedAt: serverTimestamp(),
-    });
+    }).catch(console.error);
   };
 
   const updateExpense = async (id: string, v: ExpenseFormValues) => {
@@ -81,7 +83,7 @@ export function useGroupExpenses(groupId: string | null): {
     const existing = await getDoc(expRef);
     const oldAmount: number = existing.exists() ? (existing.data().amount ?? 0) : 0;
 
-    await updateDoc(expRef, {
+    updateDoc(expRef, {
       description: v.description,
       category: v.category,
       amount: v.amount,
@@ -93,13 +95,12 @@ export function useGroupExpenses(groupId: string | null): {
       splitMethod: v.splitMethod ?? 'equal',
       splits: v.splits ?? {},
       updatedAt: serverTimestamp(),
-    });
+    }).catch(console.error);
 
-    const delta = v.amount - oldAmount;
-    await updateDoc(doc(db, 'groups', groupId), {
-      totalExpenses: increment(delta),
+    updateDoc(doc(db, 'groups', groupId), {
+      totalExpenses: increment(v.amount - oldAmount),
       updatedAt: serverTimestamp(),
-    });
+    }).catch(console.error);
   };
 
   const deleteExpense = async (id: string) => {
@@ -109,11 +110,11 @@ export function useGroupExpenses(groupId: string | null): {
     const existing = await getDoc(expRef);
     const amount: number = existing.exists() ? (existing.data().amount ?? 0) : 0;
 
-    await deleteDoc(expRef);
-    await updateDoc(doc(db, 'groups', groupId), {
+    deleteDoc(expRef).catch(console.error);
+    updateDoc(doc(db, 'groups', groupId), {
       totalExpenses: increment(-amount),
       updatedAt: serverTimestamp(),
-    });
+    }).catch(console.error);
   };
 
   return { expenses, loading, addExpense, updateExpense, deleteExpense };
