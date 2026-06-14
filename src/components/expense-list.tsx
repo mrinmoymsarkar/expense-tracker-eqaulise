@@ -361,12 +361,12 @@ export function ExpenseList({
           {/* Rows */}
           <div>
             {items.map((e, idx) => (
-              <React.Fragment key={e.id}>
+              <div key={e.id} className="[content-visibility:auto] [contain-intrinsic-size:auto_64px]">
                 <ExpenseRow expense={e} onTap={onTap} onDelete={onDelete} />
                 {idx < items.length - 1 && (
                   <div className="mx-3 border-b border-dashed border-border/60" />
                 )}
-              </React.Fragment>
+              </div>
             ))}
           </div>
         </div>
