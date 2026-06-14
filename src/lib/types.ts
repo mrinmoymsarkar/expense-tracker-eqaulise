@@ -31,6 +31,7 @@ export interface PersonalExpense {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string;
+  pending?: boolean;
 }
 
 export interface GroupExpense extends PersonalExpense {

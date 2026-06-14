@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '@/components/providers/auth-provider';
 import { getDb } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 import type { PersonalExpense, ExpenseFormValues } from '@/lib/types';
 
 export function usePersonalExpenses(): {
@@ -25,6 +26,7 @@ export function usePersonalExpenses(): {
   deleteExpense: (id: string) => Promise<void>;
 } {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [expenses, setExpenses] = useState<PersonalExpense[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,14 +39,44 @@ export function usePersonalExpenses(): {
 
     const db = getDb();
     const ref = collection(db, 'users', user.uid, 'personalExpenses');
-    const q = query(ref, orderBy('date', 'desc'));
 
-    const unsub = onSnapshot(q, (snap) => {
-      setExpenses(snap.docs.map((d) => ({ id: d.id, ...d.data() } as PersonalExpense)));
-      setLoading(false);
-    });
+    let unsub: (() => void) | undefined;
 
-    return unsub;
+    const attach = (withOrder: boolean) => {
+      const q = withOrder ? query(ref, orderBy('date', 'desc')) : query(ref);
+      unsub = onSnapshot(
+        q,
+        { includeMetadataChanges: true },
+        (snap) => {
+          let docs = snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+            pending: d.metadata.hasPendingWrites,
+          } as PersonalExpense));
+          if (!withOrder) {
+            docs = docs.sort((a, b) => {
+              const aMs = a.date?.toMillis?.() ?? 0;
+              const bMs = b.date?.toMillis?.() ?? 0;
+              return bMs - aMs;
+            });
+          }
+          setExpenses(docs);
+          setLoading(false);
+        },
+        (err) => {
+          if (withOrder) {
+            // Composite index missing: fall back to client-side sort
+            attach(false);
+          } else {
+            console.error(err);
+            setLoading(false);
+          }
+        }
+      );
+    };
+
+    attach(true);
+    return () => unsub?.();
   }, [user]);
 
   // Firestore offline persistence: onSnapshot reflects writes from local cache
@@ -64,7 +96,7 @@ export function usePersonalExpenses(): {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: user.uid,
-    }).catch(console.error);
+    }).catch((e) => toast({ variant: 'destructive', title: 'Save failed', description: e instanceof Error ? e.message : 'Could not save to server' }));
   };
 
   const updateExpense = async (id: string, v: ExpenseFormValues) => {
@@ -80,13 +112,13 @@ export function usePersonalExpenses(): {
       notes: v.notes ?? '',
       tags: v.tags ?? [],
       updatedAt: serverTimestamp(),
-    }).catch(console.error);
+    }).catch((e) => toast({ variant: 'destructive', title: 'Save failed', description: e instanceof Error ? e.message : 'Could not save to server' }));
   };
 
   const deleteExpense = async (id: string) => {
     if (!user) throw new Error('Not authenticated');
     const db = getDb();
-    deleteDoc(doc(db, 'users', user.uid, 'personalExpenses', id)).catch(console.error);
+    deleteDoc(doc(db, 'users', user.uid, 'personalExpenses', id)).catch((e) => toast({ variant: 'destructive', title: 'Save failed', description: e instanceof Error ? e.message : 'Could not save to server' }));
   };
 
   return { expenses, loading, addExpense, updateExpense, deleteExpense };

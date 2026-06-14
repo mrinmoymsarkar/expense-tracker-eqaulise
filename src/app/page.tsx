@@ -42,6 +42,7 @@ import Settings from "@/components/settings";
 import GroupDetail from "@/components/group-detail";
 import { MobileNav, type MobileView } from "@/components/mobile-nav";
 import { AddExpenseSheet } from "@/components/add-expense-sheet";
+import { SyncBanner } from "@/components/sync-banner";
 import { cn } from "@/lib/utils";
 import type { ExpenseFormValues, Group } from "@/lib/types";
 
@@ -106,6 +107,7 @@ const AppLayout = () => {
       paymentMethod: e.paymentMethod,
       notes: e.notes,
       tags: e.tags ?? [],
+      pending: e.pending,
     }));
     const fromGroups = summary.allGroupExpenses.map((e) => ({
       id: e.id,
@@ -121,6 +123,7 @@ const AppLayout = () => {
       paidBy: e.paidBy,
       splitMethod: e.splitMethod,
       splits: e.splits,
+      pending: e.pending,
     }));
     return [...personal, ...fromGroups].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -272,6 +275,7 @@ const AppLayout = () => {
             <ThemeToggle />
           </div>
         </header>
+        <SyncBanner />
         <main className="flex-1 overflow-auto p-4 pb-[calc(5rem+var(--sab))] sm:p-6 sm:pb-[calc(5rem+var(--sab))] md:pb-6">
            {selectedGroup ? (
             <GroupDetail group={selectedGroup} onBack={() => setSelectedGroup(null)} />

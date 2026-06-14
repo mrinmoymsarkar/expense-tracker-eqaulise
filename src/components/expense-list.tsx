@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, X, Users, Trash2 } from 'lucide-react';
+import { Search, X, Users, Trash2, Loader2 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ export interface DisplayExpense {
   paidBy?: string;
   splitMethod?: 'equal' | 'exact' | 'percentage';
   splits?: Record<string, number>;
+  pending?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -139,9 +140,12 @@ function ExpenseRow({
 
         {/* Amount + date */}
         <div className="flex shrink-0 flex-col items-end gap-0.5">
-          <span className="tnum font-mono text-sm font-semibold">
-            ₹{expense.amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-          </span>
+          <div className="flex items-center gap-1">
+            {expense.pending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" aria-label="Syncing" />}
+            <span className="tnum font-mono text-sm font-semibold">
+              ₹{expense.amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+            </span>
+          </div>
           <span className="font-code text-[0.6rem] uppercase tracking-[0.1em] text-muted-foreground">
             {dateLabel}
           </span>

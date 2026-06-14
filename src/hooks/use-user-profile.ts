@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '@/components/providers/auth-provider';
 import { getDb } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/types';
 
 export function useUserProfile(): {
@@ -21,6 +22,7 @@ export function useUserProfile(): {
   updateProfile: (data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>) => Promise<void>;
 } {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +55,7 @@ export function useUserProfile(): {
     // but the local cache + onSnapshot reflect the change immediately. Awaiting
     // them hangs the UI (spinner stuck) until the server responds, so we fire the
     // writes and let them settle in the background.
-    setDoc(doc(db, 'users', user.uid), data, { merge: true }).catch(console.error);
+    setDoc(doc(db, 'users', user.uid), data, { merge: true }).catch((e) => toast({ variant: 'destructive', title: 'Save failed', description: e instanceof Error ? e.message : 'Could not save to server' }));
 
     const displayChanged =
       data.displayName !== undefined ||
