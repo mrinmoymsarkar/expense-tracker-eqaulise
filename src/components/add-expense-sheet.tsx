@@ -685,36 +685,53 @@ function ExpenseFormBody({
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-3">
               {/* Date + Time */}
-              <div className="flex gap-3">
-                <div className="flex-1 space-y-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
                   <span className="font-code text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
                     Date
                   </span>
-                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-11 w-full justify-start text-left font-normal text-sm"
-                      >
-                        {format(formState.date, 'PPP')}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formState.date}
-                        onSelect={(d) => {
-                          if (d) {
-                            setFormState((prev) => ({ ...prev, date: d }));
-                            setDatePickerOpen(false);
-                          }
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  {isMobile ? (
+                    // Native date input opens iOS date-wheel — Popover+Calendar is clipped inside mobile sheet
+                    <Input
+                      type="date"
+                      value={format(formState.date, 'yyyy-MM-dd')}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const [y, m, d] = e.target.value.split('-').map(Number);
+                          const next = new Date(formState.date);
+                          next.setFullYear(y, m - 1, d);
+                          setFormState((prev) => ({ ...prev, date: next }));
+                        }
+                      }}
+                      className="h-11"
+                    />
+                  ) : (
+                    <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="h-11 w-full justify-start text-left font-normal text-sm"
+                        >
+                          {format(formState.date, 'PPP')}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formState.date}
+                          onSelect={(d) => {
+                            if (d) {
+                              setFormState((prev) => ({ ...prev, date: d }));
+                              setDatePickerOpen(false);
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
                 </div>
-                <div className="w-28 space-y-1">
+                <div className="space-y-1">
                   <span className="font-code text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
                     Time
                   </span>
