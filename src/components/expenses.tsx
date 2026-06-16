@@ -175,7 +175,7 @@ export default function Expenses({
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-3 sm:gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-headline text-2xl font-medium">

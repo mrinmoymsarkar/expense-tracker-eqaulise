@@ -93,7 +93,7 @@ export default function GroupDetail({
   };
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-3 sm:gap-6">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
         <Button
@@ -158,7 +158,7 @@ export default function GroupDetail({
       </div>
 
       {/* ── Balance cards ──────────────────────────────── */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="anim-rise">
           <CardHeader className="pb-2">
             <CardDescription className="font-code text-[0.65rem] uppercase tracking-[0.2em]">

@@ -71,7 +71,7 @@ function CreateGroupForm({
           Start splitting expenses with friends
         </DialogDescription>
       </DialogHeader>
-      <div className="grid gap-4 py-4">
+      <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
         <div className="grid gap-1.5">
           <Label
             htmlFor="group-name"
@@ -164,7 +164,7 @@ function JoinGroupDialog({
               Enter the 8-character invite code
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-3 sm:py-4">
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -212,7 +212,7 @@ function EmptyGroups({
   const [createOpen, setCreateOpen] = React.useState(false);
 
   return (
-    <div className="anim-rise flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center">
+    <div className="anim-rise flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 sm:p-8 text-center">
       <p className="font-headline text-xl font-medium">No groups yet</p>
       <p className="mt-1 max-w-xs font-code text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground">
         Create a group or join with a code to start splitting
@@ -251,7 +251,7 @@ export default function Groups({
   const [createOpen, setCreateOpen] = React.useState(false);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-3 sm:gap-6">
       {/* Header row */}
       <div className="flex items-center justify-end gap-2">
         <JoinGroupDialog joinGroupByCode={joinGroupByCode} />
@@ -275,7 +275,7 @@ export default function Groups({
 
       {/* Cards grid */}
       {groups.length > 0 && (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {groups.map((group, i) => {
             const memberValues = Object.values(group.members);
             const visible = memberValues.slice(0, 5);

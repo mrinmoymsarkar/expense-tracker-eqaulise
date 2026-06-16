@@ -76,7 +76,7 @@ function ProfileSettings() {
         <CardTitle className="font-headline text-2xl font-medium">Profile</CardTitle>
         <CardDescription>Manage your public profile information.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-4 sm:space-y-5">
         {/* Avatar */}
         <div className="flex items-center space-x-4">
           <Avatar className="h-20 w-20">
@@ -210,7 +210,7 @@ function PreferencesSettings() {
         <CardTitle className="font-headline text-2xl font-medium">Preferences</CardTitle>
         <CardDescription>Customize the application to your liking.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6">
         {/* Theme */}
         <div className="space-y-2">
           <Label className="font-code text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
