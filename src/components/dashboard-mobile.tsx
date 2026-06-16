@@ -110,7 +110,7 @@ function RecentRow({ expense }: { expense: DisplayExpense }) {
   })();
 
   return (
-    <div className="flex min-h-[48px] items-center gap-3 py-1.5">
+    <div className="flex min-h-[44px] items-center gap-3 py-1">
       <div
         className={cn(
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-none text-sm',
@@ -231,7 +231,7 @@ export default function DashboardMobile({
   const paymentTotal = paymentChartData.reduce((s, p) => s + p.amount, 0);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {/* Month switcher */}
       <div className="flex items-center justify-center gap-1 pt-1">
         <button
@@ -260,7 +260,7 @@ export default function DashboardMobile({
       </div>
 
       {/* 2×2 stat grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {stats.map((stat, i) => {
           const deltaChip =
             i === 0 && spendDelta.pct !== null ? (
@@ -366,7 +366,7 @@ export default function DashboardMobile({
                   </p>
                 </div>
               ) : (
-                <ChartContainer config={categoriesChartConfig} className="mx-auto h-[320px] w-full">
+                <ChartContainer config={categoriesChartConfig} className="mx-auto h-[240px] w-full">
                   <PieChart>
                     <ChartTooltip
                       cursor={false}
@@ -425,7 +425,7 @@ export default function DashboardMobile({
                   </p>
                 </div>
               ) : (
-                <ChartContainer config={categoriesChartConfig} className="h-[280px] w-full">
+                <ChartContainer config={categoriesChartConfig} className="h-[210px] w-full">
                   <BarChart
                     data={monthlyChartData}
                     accessibilityLayer
@@ -472,7 +472,7 @@ export default function DashboardMobile({
                   </p>
                 </div>
               ) : (
-                <ChartContainer config={dailyChartConfig} className="h-[260px] w-full">
+                <ChartContainer config={dailyChartConfig} className="h-[195px] w-full">
                   <AreaChart
                     data={dailyChartData}
                     margin={{ top: 8, right: 10, bottom: 8, left: 10 }}
@@ -528,7 +528,7 @@ export default function DashboardMobile({
                   </p>
                 </div>
               ) : (
-                <ChartContainer config={paymentChartConfig} className="mx-auto h-[280px] w-full">
+                <ChartContainer config={paymentChartConfig} className="mx-auto h-[210px] w-full">
                   <PieChart>
                     <ChartTooltip
                       cursor={false}
@@ -649,7 +649,7 @@ export default function DashboardMobile({
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {budgetCategories.map((cat) => {
                 const Icon = cat.icon;
                 const spent = spentByCategory[cat.value] ?? 0;
