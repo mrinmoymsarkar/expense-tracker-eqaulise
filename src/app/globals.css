@@ -3,6 +3,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile reads too small at the default 16px root — scale the whole rem-based
+   UI up on phones. Desktop (>=640px) keeps the default 16px. */
+@media (max-width: 639.98px) {
+  html {
+    font-size: 18px;
+  }
+}
+
 @layer base {
   :root {
     --sab: env(safe-area-inset-bottom, 0px);
