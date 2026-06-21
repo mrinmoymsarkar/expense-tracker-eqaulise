@@ -178,7 +178,7 @@ export default function Expenses({
     <div className="grid gap-3 sm:gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-headline text-2xl font-medium">
+          <CardTitle className="font-headline text-lg sm:text-2xl font-medium">
             Recent Transactions
           </CardTitle>
           <Button

@@ -82,7 +82,7 @@ function ExpenseRow({
       {/* Foreground row */}
       <div
         className={cn(
-          'relative flex min-h-[60px] cursor-pointer items-center gap-3 bg-background px-3 py-2 transition-colors hover:bg-muted/50',
+          'relative flex min-h-[56px] cursor-pointer items-center gap-3 bg-background px-3 py-2 transition-colors hover:bg-muted/50',
           !swiping && 'transition-transform duration-200 ease-out',
         )}
         style={{ transform: `translateX(${translateX}px)` }}
@@ -95,26 +95,26 @@ function ExpenseRow({
         {/* Category icon badge */}
         <div
           className={cn(
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-md border-none text-sm',
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-none text-sm',
             badge.className,
           )}
           style={badge.style}
         >
-          <CategoryIcon className="h-5 w-5" />
+          <CategoryIcon className="h-4 w-4" />
         </div>
 
         {/* Description + sub-line */}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-medium leading-tight">{expense.description}</p>
-          <p className="font-code mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
+          <p className="truncate text-sm font-medium leading-tight">{expense.description}</p>
+          <p className="font-code mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
             {expense.group ? (
               <>
-                <Users className="h-3.5 w-3.5 shrink-0" />
+                <Users className="h-3 w-3 shrink-0" />
                 <span className="truncate">{expense.group}</span>
               </>
             ) : (
               <>
-                <PaymentIcon className="h-3.5 w-3.5 shrink-0" />
+                <PaymentIcon className="h-3 w-3 shrink-0" />
                 <span>{paymentMethod.label}</span>
               </>
             )}
@@ -123,7 +123,7 @@ function ExpenseRow({
                 {expense.tags.slice(0, 2).map((tag) => (
                   <span
                     key={tag}
-                    className="font-code text-xs text-muted-foreground/70"
+                    className="font-code text-[0.6rem] text-muted-foreground/70"
                   >
                     #{tag}
                   </span>
@@ -141,12 +141,12 @@ function ExpenseRow({
         {/* Amount + date */}
         <div className="flex shrink-0 flex-col items-end gap-0.5">
           <div className="flex items-center gap-1">
-            {expense.pending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-label="Syncing" />}
-            <span className="tnum font-mono text-base font-semibold">
+            {expense.pending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" aria-label="Syncing" />}
+            <span className="tnum font-mono text-sm font-semibold">
               ₹{expense.amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
             </span>
           </div>
-          <span className="font-code text-xs uppercase tracking-[0.1em] text-muted-foreground">
+          <span className="font-code text-[0.6rem] uppercase tracking-[0.1em] text-muted-foreground">
             {dateLabel}
           </span>
         </div>
@@ -264,7 +264,7 @@ export function ExpenseList({
         <button
           onClick={() => { setActiveCategory(null); setActiveGroup(null); setActiveTag(null); }}
           className={cn(
-            'flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 font-code text-[0.72rem] uppercase tracking-[0.15em] transition-colors',
+            'flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 font-code text-[0.6rem] uppercase tracking-[0.15em] transition-colors',
             !activeCategory && !activeGroup && !activeTag
               ? 'bg-primary text-primary-foreground border-primary'
               : 'border-border bg-card text-muted-foreground hover:bg-muted',
@@ -282,7 +282,7 @@ export function ExpenseList({
               key={cat.value}
               onClick={() => setActiveCategory(isActive ? null : cat.value)}
               className={cn(
-                'flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 font-code text-[0.72rem] uppercase tracking-[0.15em] transition-colors',
+                'flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 font-code text-[0.6rem] uppercase tracking-[0.15em] transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'border-border bg-card text-muted-foreground hover:bg-muted',
@@ -302,7 +302,7 @@ export function ExpenseList({
               key={name}
               onClick={() => setActiveGroup(isActive ? null : name)}
               className={cn(
-                'flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 font-code text-[0.72rem] uppercase tracking-[0.15em] transition-colors',
+                'flex h-7 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 font-code text-[0.6rem] uppercase tracking-[0.15em] transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'border-border bg-card text-muted-foreground hover:bg-muted',
@@ -322,7 +322,7 @@ export function ExpenseList({
               key={tag}
               onClick={() => setActiveTag(isActive ? null : tag)}
               className={cn(
-                'flex h-7 shrink-0 snap-start items-center rounded-full border border-dashed px-3 font-code text-[0.72rem] tracking-[0.15em] transition-colors',
+                'flex h-7 shrink-0 snap-start items-center rounded-full border border-dashed px-3 font-code text-[0.6rem] tracking-[0.15em] transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground border-primary border-solid'
                   : 'border-border bg-card text-muted-foreground hover:bg-muted',
@@ -354,7 +354,7 @@ export function ExpenseList({
       {grouped.map(({ key, label, items }) => (
         <div key={key}>
           {/* Day header */}
-          <div className="font-code border-b border-dashed border-border py-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <div className="font-code border-b border-dashed border-border py-2 text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
             {label}
           </div>
 
