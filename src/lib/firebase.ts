@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, type Auth } from "firebase/auth";
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -17,7 +17,11 @@ const firebaseConfig = {
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
+
+// getAuth() probes localStorage/indexedDB persistence in a Promise; on the server
+// (incl. Node 25's partial webstorage) that throws. Auth is only ever used client-side,
+// so initialize it only in the browser (mirrors the lazy getDb() guard).
+const auth: Auth = typeof window !== "undefined" ? getAuth(app) : (undefined as unknown as Auth);
 
 let _db: Firestore | null = null;
 
