@@ -195,7 +195,7 @@ const AppLayout = () => {
 
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-background">
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ const AppLayout = () => {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
           <div className="flex items-center gap-2 min-w-0">
             <EqualizeLogo className="size-6 shrink-0 text-primary md:hidden" />
@@ -276,7 +276,7 @@ const AppLayout = () => {
           </div>
         </header>
         <SyncBanner />
-        <main className="flex-1 overflow-auto p-4 pb-[calc(5rem+var(--sab))] sm:p-6 sm:pb-[calc(5rem+var(--sab))] md:pb-6">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 pb-[calc(5rem+var(--sab))] sm:p-6 sm:pb-[calc(5rem+var(--sab))] md:pb-6">
            {selectedGroup ? (
             <GroupDetail group={selectedGroup} onBack={() => setSelectedGroup(null)} />
           ) : (
