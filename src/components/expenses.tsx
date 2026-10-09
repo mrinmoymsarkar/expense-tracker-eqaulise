@@ -240,7 +240,7 @@ export default function Expenses({
                           style={catBadge.style}
                         >
                           <CatIcon className="h-4 w-4" />
-                          <span>{expense.category}</span>
+                          <span>{cat.label}</span>
                         </Badge>
                       </TableCell>
                       <TableCell>{format(new Date(expense.date), 'PPP')}</TableCell>
