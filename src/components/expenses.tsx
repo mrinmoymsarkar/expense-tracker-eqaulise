@@ -167,7 +167,7 @@ export default function Expenses({
       toast({ title: 'Nothing to export', description: 'No expenses match the current view.' });
       return;
     }
-    exportExpensesCsv(visibleExpenses);
+    exportExpensesCsv(visibleExpenses.map((e) => ({ ...e, category: getCategory(e.category).label })));
   };
 
   /* ---------------------------------------------------------------- */
