@@ -167,7 +167,7 @@ export default function Expenses({
       toast({ title: 'Nothing to export', description: 'No expenses match the current view.' });
       return;
     }
-    exportExpensesCsv(visibleExpenses);
+    exportExpensesCsv(visibleExpenses.map((e) => ({ ...e, category: getCategory(e.category).label })));
   };
 
   /* ---------------------------------------------------------------- */
@@ -240,7 +240,7 @@ export default function Expenses({
                           style={catBadge.style}
                         >
                           <CatIcon className="h-4 w-4" />
-                          <span>{expense.category}</span>
+                          <span>{cat.label}</span>
                         </Badge>
                       </TableCell>
                       <TableCell>{format(new Date(expense.date), 'PPP')}</TableCell>
