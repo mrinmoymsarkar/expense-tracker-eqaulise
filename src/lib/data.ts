@@ -173,3 +173,5 @@ export function categoryBadge(cat: { color: string; chartColor: string }): { cla
     ? { className: cat.color, style: undefined }
     : { className: '', style: { backgroundColor: `${cat.chartColor}26`, color: cat.chartColor } };
 }
+
+
