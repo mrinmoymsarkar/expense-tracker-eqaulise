@@ -90,9 +90,19 @@ export const categories: {
   },
 ];
 
+// Not used by the app today (components use useCategories); kept in sync so any
+// future caller gets the same Uncategorised fallback instead of the first built-in.
+const UNCATEGORISED_CATEGORY = {
+  value: "Uncategorised",
+  label: "Uncategorised",
+  icon: Tag,
+  color: "",
+  chartColor: "#9ca3af",
+};
+
 export const getCategory = (categoryValue: string) => {
   const category = categories.find((c) => c.value === categoryValue);
-  return category || categories[0];
+  return category || UNCATEGORISED_CATEGORY;
 };
 
 export const paymentMethods: {
