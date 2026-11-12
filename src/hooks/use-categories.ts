@@ -35,7 +35,17 @@ export function useCategories(): { categories: ResolvedCategory[]; getCategory: 
     }));
     const all = [...builtin, ...custom];
     const byValue = new Map(all.map((c) => [c.value, c]));
-    const getCategory = (value: string) => byValue.get(value) ?? all[0];
+    // Unknown values (for example a deleted custom category) used to render as the
+    // first built-in ("Food & Dining"). Show an explicit Uncategorised category instead.
+    const uncategorised: ResolvedCategory = {
+      value: 'Uncategorised',
+      label: 'Uncategorised',
+      icon: FALLBACK_ICON,
+      color: '',
+      chartColor: '#9ca3af',
+      isCustom: false,
+    };
+    const getCategory = (value: string) => byValue.get(value) ?? uncategorised;
     return { categories: all, getCategory };
   }, [profile?.categories]);
 }
