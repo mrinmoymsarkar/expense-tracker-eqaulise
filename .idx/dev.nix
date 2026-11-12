@@ -1,3 +1,7 @@
+# Derived, with modifications, from the Firebase Studio Next.js template
+# (https://github.com/firebase-studio/templates), used under the Apache License 2.0.
+# See NOTICE and LICENSES/Apache-2.0.txt.
+
 # To learn more about how to use Nix to configure your environment
 # see: https://firebase.google.com/docs/studio/customize-workspace
 {pkgs}: {
