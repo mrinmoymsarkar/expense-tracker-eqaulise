@@ -514,16 +514,9 @@ function ExpenseFormBody({
                     key={idx}
                     type="button"
                     onClick={() => {
-                      const validCategory = categories.find((c) => c.value === tpl.category)?.value as Category | undefined;
-                      const validPaymentMethod = (['Card', 'UPI', 'Cash'] as PaymentMethod[]).includes(tpl.paymentMethod as PaymentMethod)
-                        ? (tpl.paymentMethod as PaymentMethod)
-                        : formState.paymentMethod;
                       setFormState((prev) => ({
                         ...prev,
                         description: tpl.description,
-                        amount: String(tpl.amount),
-                        category: validCategory ?? prev.category,
-                        paymentMethod: validPaymentMethod,
                       }));
                     }}
                     className="flex min-h-[44px] shrink-0 snap-start items-center rounded-md border border-border bg-card px-3 py-2 font-code text-xs text-muted-foreground hover:bg-muted transition-colors"
@@ -531,7 +524,6 @@ function ExpenseFormBody({
                     <span className="max-w-[10rem] truncate">
                       {tpl.description.length > 16 ? tpl.description.slice(0, 16) + '…' : tpl.description}
                     </span>
-                    <span className="ml-1 shrink-0">· ₹{tpl.amount}</span>
                   </button>
                 ))}
               </div>
