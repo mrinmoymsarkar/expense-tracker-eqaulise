@@ -17,6 +17,12 @@ const GoogleIcon = () => (
     </svg>
 );
 
+const sampleLedger = [
+  { entry: 'Goa trip — beach shack', who: 'Ravi owes you', amount: '₹850' },
+  { entry: 'Flat 4B — electricity', who: 'You owe Priya', amount: '₹500' },
+  { entry: 'Office lunch, Friday', who: 'Anjali owes you', amount: '₹1,200' },
+];
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -194,6 +200,27 @@ export default function LoginPage() {
               posterSrc="/videos/equalize-demo-v1.webp"
               videoSrc="/videos/equalize-demo-v1.mp4"
               durationLabel="0:25"
+              fallback={
+                <div className="max-w-md">
+                  {sampleLedger.map((row, i) => (
+                    <div
+                      key={i}
+                      className="anim-rise flex items-baseline justify-between gap-4 border-b border-dashed border-[hsl(var(--sidebar-border))] py-3"
+                      style={{ animationDelay: `${200 + i * 150}ms` }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm">{row.entry}</p>
+                        <p className="font-code text-xs text-[hsl(var(--sidebar-foreground))]/55">
+                          {row.who}
+                        </p>
+                      </div>
+                      <span className="tnum shrink-0 font-code text-sm text-[hsl(var(--sidebar-primary))]">
+                        {row.amount}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              }
             />
           </div>
         </div>
