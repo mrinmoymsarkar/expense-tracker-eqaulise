@@ -19,6 +19,11 @@ type LandingTrailerProps = {
    */
   fallback?: React.ReactNode;
   className?: string;
+  /**
+   * Class for the caption text. The default suits light backgrounds; on the
+   * dark sidebar panel pass a light color so the caption stays legible.
+   */
+  captionClassName?: string;
 };
 
 type TrailerState = 'idle' | 'loading' | 'playing' | 'error' | 'unavailable';
@@ -40,6 +45,7 @@ export function LandingTrailer({
   durationLabel = '0:25',
   fallback,
   className,
+  captionClassName = 'text-muted-foreground',
 }: LandingTrailerProps) {
   const [state, setState] = useState<TrailerState>('idle');
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -145,7 +151,7 @@ export function LandingTrailer({
         )}
       </div>
 
-      <p className="mt-3 text-xs text-muted-foreground">
+      <p className={`mt-3 text-xs ${captionClassName}`}>
         Watch the {durationLabel} demo: add an expense, split it with a group, and
         see who owes what. Silent video, nothing loads until you press Play.
       </p>
