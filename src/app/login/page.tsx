@@ -200,6 +200,7 @@ export default function LoginPage() {
               posterSrc="/videos/equalize-demo-v1.webp"
               videoSrc="/videos/equalize-demo-v1.mp4"
               durationLabel="0:25"
+              captionClassName="text-[hsl(var(--sidebar-foreground))]/60"
               fallback={
                 <div className="max-w-md">
                   {sampleLedger.map((row, i) => (
