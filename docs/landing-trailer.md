@@ -58,6 +58,10 @@ ffmpeg -ss 2 -i public/videos/equalize-demo-v1.mp4 -frames:v 1 \
 - Pauses on hidden tab and when scrolled out of view; never auto-resumes.
 - Load failure shows Retry plus the written summary; sign-in is never
   blocked.
+- If the poster asset is missing entirely (for example before the trailer
+  is produced), the component renders its `fallback` content instead of a
+  broken image: the original sample ledger rows on desktop, nothing on
+  mobile.
 - Keyboard: the Play control is a real button with an accessible name;
   the native controls handle the rest.
 
