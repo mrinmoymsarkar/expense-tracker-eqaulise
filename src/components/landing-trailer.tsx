@@ -12,10 +12,16 @@ type LandingTrailerProps = {
   videoSrc: string;
   /** Short length label shown to visitors, e.g. "0:25" */
   durationLabel?: string;
+  /**
+   * Rendered instead of the trailer when the poster asset is missing
+   * (for example before the trailer has been produced). Pass the content
+   * the area would show without a trailer; omit to render nothing.
+   */
+  fallback?: React.ReactNode;
   className?: string;
 };
 
-type TrailerState = 'idle' | 'loading' | 'playing' | 'error';
+type TrailerState = 'idle' | 'loading' | 'playing' | 'error' | 'unavailable';
 
 const DEMO_SUMMARY =
   'The demo shows adding an expense, splitting it with a group and seeing who owes what.';
@@ -32,6 +38,7 @@ export function LandingTrailer({
   posterSrc,
   videoSrc,
   durationLabel = '0:25',
+  fallback,
   className,
 }: LandingTrailerProps) {
   const [state, setState] = useState<TrailerState>('idle');
@@ -72,6 +79,11 @@ export function LandingTrailer({
     };
   }, [state]);
 
+  // Missing poster asset: degrade to the fallback, never a broken image.
+  if (state === 'unavailable') {
+    return <>{fallback ?? null}</>;
+  }
+
   return (
     <div ref={containerRef} className={className}>
       <div className="relative aspect-video w-full overflow-hidden border border-border bg-black/5">
@@ -83,6 +95,7 @@ export function LandingTrailer({
               fill
               sizes="(max-width: 1024px) 100vw, 640px"
               className="object-contain"
+              onError={() => setState('unavailable')}
             />
             <button
               type="button"
