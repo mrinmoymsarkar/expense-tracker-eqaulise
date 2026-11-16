@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { EqualizeLogo } from '@/components/icons';
+import { LandingTrailer } from '@/components/landing-trailer';
 import { Eye, EyeOff } from 'lucide-react';
 
 const GoogleIcon = () => (
@@ -15,12 +16,6 @@ const GoogleIcon = () => (
         <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.3 1.84-4.32 1.84-3.6 0-6.5-2.95-6.5-6.5s2.9-6.5 6.5-6.5c1.95 0 3.35.73 4.1 1.5l2.43-2.42C19.2 3.46 16.2.92 12.48.92c-5.17 0-9.4 4.15-9.4 9.25s4.23 9.25 9.4 9.25c2.82 0 4.95-.94 6.62-2.62 1.83-1.83 2.25-4.32 2.25-6.2v-1.1H12.48z" />
     </svg>
 );
-
-const sampleLedger = [
-  { entry: 'Goa trip — beach shack', who: 'Ravi owes you', amount: '₹850' },
-  { entry: 'Flat 4B — electricity', who: 'You owe Priya', amount: '₹500' },
-  { entry: 'Office lunch, Friday', who: 'Anjali owes you', amount: '₹1,200' },
-];
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -194,24 +189,12 @@ export default function LoginPage() {
             </em>
           </h1>
 
-          <div className="mt-12 max-w-md">
-            {sampleLedger.map((row, i) => (
-              <div
-                key={i}
-                className="anim-rise flex items-baseline justify-between gap-4 border-b border-dashed border-[hsl(var(--sidebar-border))] py-3"
-                style={{ animationDelay: `${200 + i * 150}ms` }}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm">{row.entry}</p>
-                  <p className="font-code text-xs text-[hsl(var(--sidebar-foreground))]/55">
-                    {row.who}
-                  </p>
-                </div>
-                <span className="tnum shrink-0 font-code text-sm text-[hsl(var(--sidebar-primary))]">
-                  {row.amount}
-                </span>
-              </div>
-            ))}
+          <div className="mt-12 max-w-xl">
+            <LandingTrailer
+              posterSrc="/videos/equalize-demo-v1.webp"
+              videoSrc="/videos/equalize-demo-v1.mp4"
+              durationLabel="0:25"
+            />
           </div>
         </div>
 
@@ -239,6 +222,13 @@ export default function LoginPage() {
               ? 'Create an account to start splitting expenses.'
               : 'Sign in to pick up where the ledger left off.'}
           </p>
+
+          <LandingTrailer
+            posterSrc="/videos/equalize-demo-v1.webp"
+            videoSrc="/videos/equalize-demo-v1.mp4"
+            durationLabel="0:25"
+            className="mt-6 lg:hidden"
+          />
 
           <form onSubmit={handleAuthAction} className="mt-8 grid gap-5">
             <div className="grid gap-2">
@@ -373,3 +363,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
