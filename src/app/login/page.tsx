@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { EqualizeLogo } from '@/components/icons';
+import { LandingTrailer } from '@/components/landing-trailer';
 import { Eye, EyeOff } from 'lucide-react';
 
 const GoogleIcon = () => (
@@ -194,24 +195,34 @@ export default function LoginPage() {
             </em>
           </h1>
 
-          <div className="mt-12 max-w-md">
-            {sampleLedger.map((row, i) => (
-              <div
-                key={i}
-                className="anim-rise flex items-baseline justify-between gap-4 border-b border-dashed border-[hsl(var(--sidebar-border))] py-3"
-                style={{ animationDelay: `${200 + i * 150}ms` }}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm">{row.entry}</p>
-                  <p className="font-code text-xs text-[hsl(var(--sidebar-foreground))]/55">
-                    {row.who}
-                  </p>
+          <div className="mt-12 max-w-xl">
+            <LandingTrailer
+              posterSrc="/videos/equalize-demo-v1.webp"
+              videoSrc="/videos/equalize-demo-v1.mp4"
+              durationLabel="0:25"
+              captionClassName="text-[hsl(var(--sidebar-foreground))]/60"
+              fallback={
+                <div className="max-w-md">
+                  {sampleLedger.map((row, i) => (
+                    <div
+                      key={i}
+                      className="anim-rise flex items-baseline justify-between gap-4 border-b border-dashed border-[hsl(var(--sidebar-border))] py-3"
+                      style={{ animationDelay: `${200 + i * 150}ms` }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm">{row.entry}</p>
+                        <p className="font-code text-xs text-[hsl(var(--sidebar-foreground))]/55">
+                          {row.who}
+                        </p>
+                      </div>
+                      <span className="tnum shrink-0 font-code text-sm text-[hsl(var(--sidebar-primary))]">
+                        {row.amount}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <span className="tnum shrink-0 font-code text-sm text-[hsl(var(--sidebar-primary))]">
-                  {row.amount}
-                </span>
-              </div>
-            ))}
+              }
+            />
           </div>
         </div>
 
@@ -239,6 +250,13 @@ export default function LoginPage() {
               ? 'Create an account to start splitting expenses.'
               : 'Sign in to pick up where the ledger left off.'}
           </p>
+
+          <LandingTrailer
+            posterSrc="/videos/equalize-demo-v1.webp"
+            videoSrc="/videos/equalize-demo-v1.mp4"
+            durationLabel="0:25"
+            className="mt-6 lg:hidden"
+          />
 
           <form onSubmit={handleAuthAction} className="mt-8 grid gap-5">
             <div className="grid gap-2">
@@ -373,3 +391,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
