@@ -193,7 +193,11 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
         totals[d.getDate()] = (totals[d.getDate()] ?? 0) + e.amount;
       }
     });
-    return Array.from({ length: daysInMonth }, (_, i) => {
+    const isCurrentMonth =
+      year === currentMonthStart.getFullYear() &&
+      month === currentMonthStart.getMonth();
+    const lastDay = isCurrentMonth ? new Date().getDate() : daysInMonth;
+    return Array.from({ length: lastDay }, (_, i) => {
       const day = i + 1;
       return { day, label: String(day), amount: totals[day] };
     });
@@ -793,3 +797,4 @@ export default function Dashboard({ expenses, summary }: DashboardProps) {
     </div>
   );
 }
+
