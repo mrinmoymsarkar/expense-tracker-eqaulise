@@ -24,6 +24,7 @@ import type { Group, ExpenseFormValues, SplitMethod, SplitMap, Category, Payment
 import { expenseFormSchema } from '@/lib/schemas';
 import { paymentMethods } from '@/lib/data';
 import { computeSplits } from '@/lib/balances';
+import { suggestNames } from '@/lib/name-suggestions';
 import { processReceipt, getSplitSuggestion } from '@/app/actions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLastPaymentMethod } from '@/hooks/use-last-payment-method';
@@ -89,6 +90,7 @@ interface AddExpenseSheetProps {
   onSubmit: (values: ExpenseFormValues, editingId?: string) => Promise<void>;
   existingTags?: string[];
   quickTemplates?: QuickTemplate[];
+  pastNames?: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -138,6 +140,7 @@ interface ExpenseFormBodyProps {
   open: boolean;
   existingTags?: string[];
   quickTemplates?: QuickTemplate[];
+  pastNames?: string[];
 }
 
 function ExpenseFormBody({
@@ -151,6 +154,7 @@ function ExpenseFormBody({
   open,
   existingTags,
   quickTemplates,
+  pastNames,
 }: ExpenseFormBodyProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -165,6 +169,7 @@ function ExpenseFormBody({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [nameFocused, setNameFocused] = useState(false);
   const [splitValue, setSplitValue] = useState<{ method: SplitMethod; splits: SplitMap }>({
     method: 'equal',
     splits: {},
@@ -226,6 +231,9 @@ function ExpenseFormBody({
 
   const [formState, setFormState] = useState<FormShape>(buildDefaults);
   const [errors, setErrors] = useState<Partial<Record<keyof FormShape, string>>>({});
+
+  // Past names matching what's typed (not offered when editing an existing expense)
+  const nameSuggestions = isEditMode ? [] : suggestNames(pastNames ?? [], formState.description);
 
   /* Reset when open changes ----------------------------------------- */
   useEffect(() => {
@@ -570,9 +578,30 @@ function ExpenseFormBody({
               onChange={(e) =>
                 setFormState((prev) => ({ ...prev, description: e.target.value }))
               }
-              onFocus={handleInputFocus}
+              onFocus={(e) => {
+                handleInputFocus(e);
+                setNameFocused(true);
+              }}
+              onBlur={() => setNameFocused(false)}
               aria-label="Description"
             />
+            {nameFocused && nameSuggestions.length > 0 && (
+              <ul className="rounded-md border border-border bg-card shadow-sm">
+                {nameSuggestions.map((name) => (
+                  <li key={name}>
+                    <button
+                      type="button"
+                      // keep focus on the input so blur doesn't hide the list before the tap lands
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setFormState((prev) => ({ ...prev, description: name }))}
+                      className="flex min-h-[44px] w-full items-center px-3 text-left font-code text-xs text-muted-foreground hover:bg-muted transition-colors"
+                    >
+                      {name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             {errors.description && (
               <p className="font-code text-[0.65rem] text-destructive">{errors.description}</p>
             )}
@@ -951,6 +980,7 @@ export function AddExpenseSheet({
   onSubmit,
   existingTags,
   quickTemplates,
+  pastNames,
 }: AddExpenseSheetProps) {
   const isMobile = useIsMobile();
   const isEditMode = Boolean(initialValues?.id);
@@ -978,6 +1008,7 @@ export function AddExpenseSheet({
     open,
     existingTags,
     quickTemplates,
+    pastNames,
   };
 
   if (isMobile) {
