@@ -1,33 +1,24 @@
 const normalise = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
 
-// Option A: names that start with what was typed, newest first.
-export function suggestPrefix(names: string[], typed: string, limit = 4): string[] {
-  const q = normalise(typed);
-  if (!q) return [];
-  return names.filter((n) => normalise(n).startsWith(q) && normalise(n) !== q).slice(0, limit);
-}
-
-// True when the letters of q appear in n in order, e.g. "zpt" in "zepto".
-const isSubsequence = (q: string, n: string) => {
+// 0 starts with, 1 contains, 2 letters in order, 9 no match or already typed in full.
+const score = (name: string, q: string) => {
+  const n = normalise(name);
+  if (n === q) return 9;
+  if (n.startsWith(q)) return 0;
+  if (n.includes(q)) return 1;
   let i = 0;
-  for (const ch of n) if (ch === q[i]) i++;
-  return i === q.length;
+  for (const c of n) if (c === q[i]) i++;
+  return i === q.length ? 2 : 9;
 };
 
-// Option B: starts-with first, then contains, then in-order letters.
-export function suggestFuzzy(names: string[], typed: string, limit = 4): string[] {
+// Shows up to 4 names whose score is at most max, best score first.
+const ranker = (max: number) => (names: string[], typed: string) => {
   const q = normalise(typed);
-  if (!q) return [];
-  const groups: string[][] = [[], [], []];
-  for (const name of names) {
-    const n = normalise(name);
-    if (n === q) continue;
-    if (n.startsWith(q)) groups[0].push(name);
-    else if (n.includes(q)) groups[1].push(name);
-    else if (isSubsequence(q, n)) groups[2].push(name);
-  }
-  return groups.flat().slice(0, limit);
-}
+  return q ? names.filter((n) => score(n, q) <= max).sort((a, b) => score(a, q) - score(b, q)).slice(0, 4) : [];
+};
 
-// Chosen ranking, set from the measured result. Prefix until the measurement says otherwise.
+export const suggestPrefix = ranker(0);
+export const suggestFuzzy = ranker(2);
+
+// Chosen ranking, set from the measured result.
 export const suggestNames = suggestPrefix;
