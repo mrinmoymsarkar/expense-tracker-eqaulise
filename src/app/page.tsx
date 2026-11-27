@@ -45,6 +45,7 @@ import { AddExpenseSheet } from "@/components/add-expense-sheet";
 import { SyncBanner } from "@/components/sync-banner";
 import { cn } from "@/lib/utils";
 import type { ExpenseFormValues, Group } from "@/lib/types";
+import { getRecentNames } from "@/lib/name-suggestions";
 
 type View = MobileView;
 
@@ -137,6 +138,8 @@ const AppLayout = () => {
     }
     return [...set].sort();
   }, [viewExpenses]);
+
+  const pastNames = React.useMemo(() => getRecentNames(viewExpenses), [viewExpenses]);
 
   const quickTemplates = React.useMemo(() => {
     const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
