@@ -24,6 +24,7 @@ import type { Group, ExpenseFormValues, SplitMethod, SplitMap, Category, Payment
 import { expenseFormSchema } from '@/lib/schemas';
 import { paymentMethods } from '@/lib/data';
 import { computeSplits } from '@/lib/balances';
+import { suggestNames } from '@/lib/name-suggestions';
 import { processReceipt, getSplitSuggestion } from '@/app/actions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLastPaymentMethod } from '@/hooks/use-last-payment-method';
@@ -89,6 +90,7 @@ interface AddExpenseSheetProps {
   onSubmit: (values: ExpenseFormValues, editingId?: string) => Promise<void>;
   existingTags?: string[];
   quickTemplates?: QuickTemplate[];
+  pastNames?: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -138,6 +140,7 @@ interface ExpenseFormBodyProps {
   open: boolean;
   existingTags?: string[];
   quickTemplates?: QuickTemplate[];
+  pastNames?: string[];
 }
 
 function ExpenseFormBody({
@@ -151,6 +154,7 @@ function ExpenseFormBody({
   open,
   existingTags,
   quickTemplates,
+  pastNames,
 }: ExpenseFormBodyProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -165,6 +169,9 @@ function ExpenseFormBody({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [nameFocused, setNameFocused] = useState(false);
+  const [nameDismissed, setNameDismissed] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [splitValue, setSplitValue] = useState<{ method: SplitMethod; splits: SplitMap }>({
     method: 'equal',
     splits: {},
@@ -226,6 +233,39 @@ function ExpenseFormBody({
 
   const [formState, setFormState] = useState<FormShape>(buildDefaults);
   const [errors, setErrors] = useState<Partial<Record<keyof FormShape, string>>>({});
+
+  // Past names matching what's typed (not offered when editing an existing expense)
+  const nameSuggestions = isEditMode ? [] : suggestNames(pastNames ?? [], formState.description);
+  const showNameSuggestions = nameFocused && !nameDismissed && nameSuggestions.length > 0;
+  // Keep the highlight valid even if the list shrinks between renders
+  const activeIndex = activeSuggestion < nameSuggestions.length ? activeSuggestion : -1;
+
+  // Fill only the description; amount, category and payment method stay as entered
+  const acceptSuggestion = (name: string) => {
+    setFormState((prev) => ({ ...prev, description: name }));
+    setActiveSuggestion(-1);
+    setNameDismissed(true);
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showNameSuggestions) return;
+    const count = nameSuggestions.length;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveSuggestion(activeIndex < 0 ? 0 : (activeIndex + 1) % count);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveSuggestion(activeIndex <= 0 ? count - 1 : activeIndex - 1);
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault(); // accept the suggestion, don't submit the form
+      acceptSuggestion(nameSuggestions[activeIndex]);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation(); // close the list, not the sheet
+      setNameDismissed(true);
+      setActiveSuggestion(-1);
+    }
+  };
 
   /* Reset when open changes ----------------------------------------- */
   useEffect(() => {
@@ -567,12 +607,48 @@ function ExpenseFormBody({
               placeholder="What was this for?"
               className="h-11"
               value={formState.description}
-              onChange={(e) =>
-                setFormState((prev) => ({ ...prev, description: e.target.value }))
-              }
-              onFocus={handleInputFocus}
+              onChange={(e) => {
+                setFormState((prev) => ({ ...prev, description: e.target.value }));
+                setActiveSuggestion(-1);
+                setNameDismissed(false);
+              }}
+              onKeyDown={handleNameKeyDown}
+              role="combobox"
+              aria-expanded={showNameSuggestions}
+              aria-controls="name-suggestions"
+              aria-autocomplete="list"
+              aria-activedescendant={activeIndex >= 0 ? `name-suggestion-${activeIndex}` : undefined}
+              onFocus={(e) => {
+                handleInputFocus(e);
+                setNameFocused(true);
+              }}
+              onBlur={() => {
+                setNameFocused(false);
+                setNameDismissed(false);
+              }}
               aria-label="Description"
             />
+            {showNameSuggestions && (
+              <ul id="name-suggestions" role="listbox" className="rounded-md border border-border bg-card shadow-sm">
+                {nameSuggestions.map((name, i) => (
+                  <li key={name} id={`name-suggestion-${i}`} role="option" aria-selected={i === activeIndex}>
+                    <button
+                      type="button"
+                      // keep focus on the input so blur doesn't hide the list before the tap lands
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => acceptSuggestion(name)}
+                      tabIndex={-1}
+                      className={cn(
+                        'flex min-h-[44px] w-full items-center px-3 text-left font-code text-xs text-muted-foreground hover:bg-muted transition-colors',
+                        i === activeIndex && 'bg-muted text-foreground'
+                      )}
+                    >
+                      {name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             {errors.description && (
               <p className="font-code text-[0.65rem] text-destructive">{errors.description}</p>
             )}
@@ -951,6 +1027,7 @@ export function AddExpenseSheet({
   onSubmit,
   existingTags,
   quickTemplates,
+  pastNames,
 }: AddExpenseSheetProps) {
   const isMobile = useIsMobile();
   const isEditMode = Boolean(initialValues?.id);
@@ -978,6 +1055,7 @@ export function AddExpenseSheet({
     open,
     existingTags,
     quickTemplates,
+    pastNames,
   };
 
   if (isMobile) {
