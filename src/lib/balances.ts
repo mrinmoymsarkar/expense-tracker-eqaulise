@@ -120,15 +120,14 @@ export function computeSplits(
   if (n === 0) return {};
 
   if (method === 'equal') {
-    const base = Math.round((total / n) * 100) / 100;
+    const totalPaise = Math.round(total * 100);
+    const sharePaise = Math.floor(totalPaise / n);
+    const extraPaise = totalPaise - sharePaise * n;
     const result: SplitMap = {};
-    let assigned = 0;
-    for (let i = 1; i < n; i++) {
-      result[memberUids[i]] = base;
-      assigned += base;
+    for (let i = 0; i < n; i++) {
+      // Distribute the remainder in member order, at most one paisa each.
+      result[memberUids[i]] = (sharePaise + (i < extraPaise ? 1 : 0)) / 100;
     }
-    // First member absorbs rounding remainder
-    result[memberUids[0]] = Math.round((total - assigned) * 100) / 100;
     return result;
   }
 
