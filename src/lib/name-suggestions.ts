@@ -1,4 +1,8 @@
-const normalise = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+const normalise = (s: string) =>
+  s
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
 
 const ranker = (max: number) => (names: string[], typed: string) => {
   const q = normalise(typed);
@@ -12,7 +16,10 @@ const ranker = (max: number) => (names: string[], typed: string) => {
     return i === q.length ? 2 : 9;
   };
   return q
-    ? names.filter((n) => score(n) <= max).sort((a, b) => score(a) - score(b)).slice(0, 4)
+    ? names
+        .filter((n) => score(n) <= max)
+        .sort((a, b) => score(a) - score(b))
+        .slice(0, 4)
     : [];
 };
 
