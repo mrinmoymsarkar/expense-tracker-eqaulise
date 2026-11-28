@@ -1,37 +1,30 @@
-import { deepStrictEqual, strictEqual } from 'node:assert';
+import { ok, strictEqual } from 'node:assert';
 import { evaluateAmount } from '../src/lib/amount-expression';
 import { computeSplits } from '../src/lib/balances';
 
-const cases: [string, number | null][] = [
-  ['250', 250],
-  ['40 + 50 * 2', 140],
-  ['(40 + 50) * 2', 180],
-  ['1,200 - 150', 1050],
-  ['0.1 + 0.2', 0.3],
-  ['100 / 3', 33.33],
-  ['10 / 0', null],
-  ['-5 + 10', 5],
-  ['2(3)', null],
-  ['1 / (1 / 0)', null],
-  ['1 2', null],
-  ['40 +', null],
-  ['(40 + 50', null],
-];
-
-for (const [input, expected] of cases) {
-  strictEqual(evaluateAmount(input), expected, input);
+for (let n = 1; n <= 20; n++) {
+  strictEqual(evaluateAmount(`40 + ${n} * 2`), 40 + n * 2);
+  strictEqual(evaluateAmount(`(40 + ${n}) * 2`), (40 + n) * 2);
 }
-console.log(`All ${cases.length} amount checks passed`);
-
-const splitCases: [string, Record<string, number>][] = [
-  ['15 + 10', { a: 12.5, b: 12.5 }],
-  ['100 / 3', { a: 16.67, b: 16.66 }],
-  ['1 / 50', { a: 0.01, b: 0.01, c: 0, d: 0 }],
-];
-
-for (const [input, expected] of splitCases) {
-  const total = evaluateAmount(input);
-  if (total === null) throw new Error(`Invalid split test amount: ${input}`);
-  deepStrictEqual(computeSplits('equal', total, Object.keys(expected)), expected, input);
+strictEqual(evaluateAmount('1,200 - 150'), 1050);
+strictEqual(evaluateAmount('0.1 + 0.2'), 0.3);
+strictEqual(evaluateAmount('100 / 3'), 33.33);
+strictEqual(evaluateAmount('-5 + 10'), 5);
+for (const input of ['10 / 0', '2(3)', '1 / (1 / 0)', '1 2', '40 +', '(40 + 50']) {
+  strictEqual(evaluateAmount(input), null, input);
 }
-console.log(`All ${splitCases.length} equal-split checks passed`);
+
+for (let paise = 1; paise <= 100; paise++) {
+  const total = evaluateAmount(`${paise} / 100`);
+  strictEqual(total, paise / 100);
+  for (let count = 1; count <= 8; count++) {
+    const members = Array.from({ length: count }, (_, i) => String(i));
+    const split = computeSplits('equal', total, members);
+    const shares = members.map(id => Math.round(split[id] * 100));
+    const context = `${paise} paise among ${count} members`;
+    strictEqual(shares.reduce((sum, share) => sum + share, 0), paise, context);
+    ok(Math.min(...shares) >= 0 && Math.max(...shares) - Math.min(...shares) <= 1, context);
+    ok(shares.every((share, i) => split[members[i]] === share / 100 && (!i || share <= shares[i - 1])), context);
+  }
+}
+console.log('Calculator and equal-split checks passed');
