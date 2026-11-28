@@ -1,44 +1,28 @@
-export const evaluateAmount = (text: string): number | null => {
-  const s = text.replace(/[₹,\s]/g, '');
-  if (!/^[\d.+\-*/()]+$/.test(s)) return null;
-  let i = 0;
-  const atom = (): number => {
-    if (s[i] === '-') {
-      i++;
-      return -atom();
-    }
-    if (s[i] === '(') {
-      i++;
-      const inner = sum();
-      if (s[i++] !== ')') throw new Error('missing bracket');
-      return inner;
-    }
-    const m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
-    if (!m) throw new Error('number expected');
-    i += m[0].length;
-    return Number(m[0]);
-  };
-  const product = (): number => {
-    let v = atom();
-    while (s[i] === '*' || s[i] === '/') {
-      const op = s[i++];
-      const r = atom();
-      if (op === '/' && r === 0) throw new Error('divide by zero');
-      v = op === '*' ? v * r : v / r;
-    }
-    return v;
-  };
-  const sum = (): number => {
-    let v = product();
-    while (s[i] === '+' || s[i] === '-') {
-      v = s[i++] === '+' ? v + product() : v - product();
-    }
-    return v;
-  };
+import { isConstantNode, isOperatorNode, isParenthesisNode, parse, type MathNode } from 'mathjs/number';
+
+function amountValue(node: MathNode): number {
+  if (isConstantNode(node)) return Number(node.value);
+  if (isParenthesisNode(node)) return amountValue(node.content);
+  if (!isOperatorNode(node) || node.implicit) return NaN;
+
+  const [left, right] = node.args.map(amountValue);
+  switch (node.fn) {
+    case 'unaryMinus': return -left;
+    case 'add': return left + right;
+    case 'subtract': return left - right;
+    case 'multiply': return left * right;
+    case 'divide': return right === 0 ? NaN : left / right;
+    default: return NaN;
+  }
+}
+
+export function evaluateAmount(text: string): number | null {
+  const expression = text.replace(/[₹,]/g, '').trim();
+  if (!/^[\d.\s+*/()-]+$/.test(expression)) return null;
   try {
-    const v = sum();
-    return i === s.length && Number.isFinite(v) ? Math.round(v * 100) / 100 : null;
+    const paise = Math.round(amountValue(parse(expression)) * 100);
+    return Number.isFinite(paise) ? paise / 100 : null;
   } catch {
     return null;
   }
-};
+}

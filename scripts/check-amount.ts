@@ -11,6 +11,9 @@ const cases: [string, number | null][] = [
   ['100 / 3', 33.33],
   ['10 / 0', null],
   ['-5 + 10', 5],
+  ['2(3)', null],
+  ['1 / (1 / 0)', null],
+  ['1 2', null],
   ['40 +', null],
   ['(40 + 50', null],
 ];
@@ -20,15 +23,15 @@ for (const [input, expected] of cases) {
 }
 console.log(`All ${cases.length} amount checks passed`);
 
-const splitCases: [string, string[], Record<string, number>][] = [
-  ['15 + 10', ['a', 'b'], { a: 12.5, b: 12.5 }],
-  ['100 / 3', ['a', 'b'], { a: 16.67, b: 16.66 }],
-  ['1 / 50', ['a', 'b', 'c', 'd'], { a: 0.01, b: 0.01, c: 0, d: 0 }],
+const splitCases: [string, Record<string, number>][] = [
+  ['15 + 10', { a: 12.5, b: 12.5 }],
+  ['100 / 3', { a: 16.67, b: 16.66 }],
+  ['1 / 50', { a: 0.01, b: 0.01, c: 0, d: 0 }],
 ];
 
-for (const [input, members, expected] of splitCases) {
+for (const [input, expected] of splitCases) {
   const total = evaluateAmount(input);
   if (total === null) throw new Error(`Invalid split test amount: ${input}`);
-  deepStrictEqual(computeSplits('equal', total, members), expected, input);
+  deepStrictEqual(computeSplits('equal', total, Object.keys(expected)), expected, input);
 }
 console.log(`All ${splitCases.length} equal-split checks passed`);
