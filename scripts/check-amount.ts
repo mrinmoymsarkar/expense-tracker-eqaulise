@@ -1,3 +1,4 @@
+import { strictEqual } from 'node:assert';
 import { evaluateAmount } from '../src/lib/amount-expression';
 
 const cases: [string, number | null][] = [
@@ -13,10 +14,7 @@ const cases: [string, number | null][] = [
   ['(40 + 50', null],
 ];
 
-let failed = 0;
-for (const [input, want] of cases) {
-  const got = evaluateAmount(input);
-  if (got !== want) failed++;
-  console.log(got === want ? 'ok  ' : 'FAIL', input, '->', got);
+for (const [input, expected] of cases) {
+  strictEqual(evaluateAmount(input), expected, input);
 }
-console.log(failed ? failed + ' failed' : 'all ' + cases.length + ' pass');
+console.log(`All ${cases.length} amount checks passed`);
