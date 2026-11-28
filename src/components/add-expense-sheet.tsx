@@ -32,6 +32,7 @@ import { useVisualViewport } from '@/hooks/use-visual-viewport';
 import { useCategories } from '@/hooks/use-categories';
 import { useAuth } from '@/components/providers/auth-provider';
 import { useToast } from '@/hooks/use-toast';
+import { evaluateAmount } from '@/lib/amount-expression';
 import { SplitEditor } from '@/components/split-editor';
 import { CategoryEditor } from '@/components/category-editor';
 import { ReceiptCropSheet } from '@/components/receipt-crop-sheet';
@@ -256,13 +257,14 @@ function ExpenseFormBody({
 
   const memberUids = groupMembers.map((m) => m.uid);
 
-  const amountNum = parseFloat(formState.amount) || 0;
+  const amountResult = evaluateAmount(formState.amount);
+  const amountNum = amountResult ?? 0;
 
   /* Validate -------------------------------------------------------- */
   function validate(): boolean {
     const errs: Partial<Record<keyof FormShape, string>> = {};
     if (!formState.description.trim()) errs.description = 'Required';
-    if (!formState.amount || isNaN(parseFloat(formState.amount)) || parseFloat(formState.amount) <= 0) {
+    if (amountResult === null || amountResult <= 0) {
       errs.amount = 'Enter a valid amount';
     }
     if (!formState.category) errs.category = 'Required';
@@ -544,8 +546,8 @@ function ExpenseFormBody({
               <span className="font-headline text-3xl text-muted-foreground">₹</span>
               <input
                 ref={amountRef}
-                type="number"
-                inputMode="decimal"
+                type="text"
+                inputMode="text"
                 placeholder="0"
                 value={formState.amount}
                 onChange={(e) =>
@@ -556,6 +558,9 @@ function ExpenseFormBody({
                 aria-label="Amount"
               />
             </div>
+            {amountResult !== null && /\d\s*[-+*/]|\(/.test(formState.amount) && (
+              <p className="font-code text-xs text-muted-foreground">= ₹{amountResult}</p>
+            )}
             {errors.amount && (
               <p className="font-code text-[0.65rem] text-destructive">{errors.amount}</p>
             )}
